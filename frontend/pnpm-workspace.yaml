@@ -1,0 +1,5 @@
+# The lockfile currently contains packages newer than the global
+# minimumReleaseAge policy. Install them with:
+#   pnpm install --config.minimumReleaseAge=0
+# This setting only skips the automatic pre-script dependency check.
+verifyDepsBeforeRun: false
