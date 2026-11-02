@@ -7,6 +7,31 @@ export interface AuthUser {
   name: string | null;
 }
 
+export interface BusinessProfile {
+  businessType: string | null;
+  employeeCount: number | null;
+  locationCount: number | null;
+  currentInfrastructure: string[];
+  requirements: string[];
+  monthlyBudget: {
+    min: number | null;
+    max: number | null;
+    currency: "INR";
+    isFlexible?: boolean;
+  };
+  preferredLanguage: string;
+  profileComplete: boolean;
+}
+
+interface AdvisorResponse {
+  sessionId: string;
+  assistantMessage: string;
+  businessProfile: BusinessProfile;
+  missingFields: string[];
+  profileComplete: boolean;
+  nextAction: string;
+}
+
 interface AuthResponse {
   user: AuthUser;
 }
@@ -99,5 +124,33 @@ export const authApi = {
 
   me() {
     return requestWithRefresh<AuthResponse>("/api/auth/me");
+  },
+};
+
+export const advisorApi = {
+  createSession() {
+    return request<AdvisorResponse>("/api/advisor/session", {
+      method: "POST",
+    });
+  },
+
+  sendMessage(sessionId: string, message: string) {
+    return request<AdvisorResponse>("/api/advisor/chat", {
+      method: "POST",
+      body: { sessionId, message },
+    });
+  },
+
+  getSession(sessionId: string) {
+    return request<{
+      sessionId: string;
+      profile: BusinessProfile;
+      messages: Array<{
+        role: "user" | "assistant";
+        content: string;
+        createdAt: string;
+      }>;
+      status: "in_progress" | "complete";
+    }>(`/api/advisor/session/${encodeURIComponent(sessionId)}`);
   },
 };

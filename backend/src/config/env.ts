@@ -55,6 +55,7 @@ if (isProduction && (accessSecret === DEFAULT_ACCESS_SECRET || refreshSecret ===
 }
 
 const cookieDomain = process.env.COOKIE_DOMAIN?.trim();
+const geminiApiKey = process.env.GEMINI_API_KEY?.trim() || undefined;
 
 export const env = {
   nodeEnv,
@@ -62,7 +63,7 @@ export const env = {
   port: readNumber("PORT", 8080),
   databaseUrl: readString(
     "DATABASE_URL",
-    "postgres://postgres:postgres@localhost:5432/udyam_digital",
+    "postgres://postgres:postgres@localhost:5433/udyam_digital",
   ),
   corsOrigins: readString("CORS_ORIGIN", "http://localhost:3000")
     .split(",")
@@ -80,4 +81,7 @@ export const env = {
     domain: cookieDomain === "" ? undefined : cookieDomain,
   },
   bcryptRounds: readNumber("BCRYPT_ROUNDS", 10),
+  geminiApiKey,
+  geminiModel: readString("GEMINI_MODEL", "gemini-3.5-flash"),
+  geminiTimeoutMs: readNumber("GEMINI_TIMEOUT_MS", 30000),
 };
