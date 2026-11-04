@@ -1,4 +1,5 @@
 import type { ErrorRequestHandler, RequestHandler } from "express";
+import multer from "multer";
 import { env } from "../config/env.js";
 import { ApiError } from "../utils/ApiError.js";
 
@@ -14,6 +15,18 @@ export const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
   if (err instanceof ApiError) {
     res.status(err.statusCode).json({
       error: { message: err.message },
+    });
+    return;
+  }
+
+  if (err instanceof multer.MulterError) {
+    res.status(400).json({
+      error: {
+        message:
+          err.code === "LIMIT_FILE_SIZE"
+            ? "Each file must be 8 MB or smaller"
+            : "File upload failed",
+      },
     });
     return;
   }
