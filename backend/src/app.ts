@@ -9,6 +9,7 @@ import {
 import { authRouter } from "./routes/auth.routes.js";
 import catalogueRouter from "./routes/catalogue.route.js";
 import advisorRouter from "./routes/advisor.route.js";
+import kycRouter from "./routes/kyc.route.js";
 
 export const createApp = () => {
   const app = express();
@@ -25,6 +26,7 @@ export const createApp = () => {
   app.use("/api/auth", authRouter);
   app.use("/api/products", catalogueRouter);
   app.use("/api/advisor", advisorRouter);
+  app.use("/api/kyc", kycRouter);
 
   app.use(notFoundHandler);
   app.use(errorHandler);
