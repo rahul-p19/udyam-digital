@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { SiteHeader } from "@/components/site-header";
 import VerificationDetails from "./verification-details";
 
 export const metadata: Metadata = {
@@ -18,33 +19,18 @@ export default async function KycAgentPage({
   const reference = Array.isArray(params.ref) ? params.ref[0] : params.ref;
 
   return (
-    <div className="min-h-screen bg-white text-[#3E4146]">
-      <header className="border-b border-[#E40000]/15 bg-white">
-        <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-6 py-4">
-          <Link href="/" className="flex items-center gap-2.5">
-            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#E40000] text-lg font-black lowercase text-white">
-              a
-            </span>
-            <span className="text-lg font-semibold tracking-tight text-[#E40000]">
-              udyam digital
-            </span>
-          </Link>
-          <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#3E4146]/55">
-            Business KYC
-          </span>
-        </div>
-        <div className="h-1 bg-[#E40000]" />
-      </header>
+    <div className="min-h-screen bg-ground text-ink">
+      <SiteHeader marker="Business KYC" />
 
-      <main className="mx-auto max-w-3xl px-6 py-10 sm:py-14">
-        <div className="rounded-xl border border-[#E40000]/20 bg-white p-6 shadow-[0_1px_2px_rgba(62,65,70,0.04)] sm:p-8">
-          <span className="inline-flex rounded-full bg-[#FFF1F1] px-3 py-1 text-xs font-semibold text-[#E40000]">
+      <main className="mx-auto max-w-5xl px-gutter py-10 sm:py-14">
+        <div className="border-t-2 border-ink pt-6">
+          <span className="inline-block border-2 border-accent px-2 py-1 text-label font-strong uppercase text-accent">
             Manual review
           </span>
-          <h1 className="mt-4 text-3xl font-semibold tracking-tight text-[#3E4146]">
+          <h1 className="mt-4 max-w-3xl text-4xl font-[750] leading-none tracking-tight text-ink sm:text-5xl">
             An agent will help you finish KYC
           </h1>
-          <p className="mt-3 text-sm leading-6 text-[#3E4146]/70">
+          <p className="mt-4 max-w-2xl text-body text-muted">
             We could not automatically match one or more of your documents. An
             Udyam Digital agent will review the case and contact you with the
             next steps.
@@ -52,11 +38,11 @@ export default async function KycAgentPage({
 
           {reference ? (
             <>
-              <div className="mt-5 rounded-lg border border-[#3E4146]/10 bg-[#FFFBFB] px-3 py-2">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#3E4146]/50">
+              <div className="mt-6 border-l-2 border-accent bg-surface px-3 py-2">
+                <p className="text-label font-strong uppercase text-muted">
                   Reference
                 </p>
-                <p className="mt-1 break-all text-xs text-[#3E4146]/75">
+                <p className="mt-1 break-all text-metadata text-ink">
                   {reference}
                 </p>
               </div>
@@ -67,30 +53,32 @@ export default async function KycAgentPage({
             </>
           ) : null}
 
-          <div className="mt-6 rounded-lg border border-[#3E4146]/10 bg-[#FFFBFB] p-4">
-            <p className="text-sm font-medium text-[#3E4146]">What happens next</p>
-            <ol className="mt-3 space-y-2 text-xs leading-5 text-[#3E4146]/65">
-              <li>1. An agent reviews the verification attempt.</li>
-              <li>2. You may be asked to re-upload a clearer document.</li>
-              <li>3. The agent completes the KYC review with you.</li>
+          <div className="mt-6 border-y border-ink/15 py-4">
+            <p className="text-metadata font-strong text-ink">
+              What happens next
+            </p>
+            <ol className="mt-3 divide-y divide-ink/15 text-metadata text-muted">
+              <li className="py-2">1. An agent reviews the verification attempt.</li>
+              <li className="py-2">2. You may be asked to re-upload a clearer document.</li>
+              <li className="py-2">3. The agent completes the KYC review with you.</li>
             </ol>
           </div>
 
-          <p className="mt-5 text-xs leading-5 text-[#3E4146]/55">
+          <p className="mt-5 text-metadata text-muted">
             Agent assignment and contact details are not connected yet. This
             page is a placeholder for the manual review workflow.
           </p>
 
-          <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+          <div className="mt-6 flex flex-col gap-3 border-t-2 border-ink pt-6 sm:flex-row">
             <Link
               href="/kyc/verify"
-              className="inline-flex items-center justify-center rounded-md bg-[#E40000] px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#C30000]"
+              className="inline-flex items-center justify-center border-2 border-accent bg-accent px-5 py-3 text-label font-strong uppercase text-white hover:border-accent-hover hover:bg-accent-hover"
             >
               Try verification again
             </Link>
             <Link
               href="/dashboard"
-              className="inline-flex items-center justify-center rounded-md border border-[#3E4146]/15 px-5 py-2.5 text-sm font-medium text-[#3E4146] transition-colors hover:bg-[#FFF1F1]"
+              className="inline-flex items-center justify-center border-2 border-ink px-5 py-3 text-label font-strong uppercase text-ink hover:bg-ink hover:text-white"
             >
               Go to dashboard
             </Link>

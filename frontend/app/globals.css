@@ -1,26 +1,101 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --dp-color-ground: #ffffff;
+  --dp-color-ink: #111111;
+  --dp-color-surface: #fff5f5;
+  --dp-color-accent: #e40000;
+  --dp-color-accent-hover: #c00000;
+  --dp-color-muted: #666666;
+  --dp-typography-face: var(--font-swiss-minimalist-host), Arial, sans-serif;
+  --dp-typography-body: 16px;
+  --dp-typography-label: 12px;
+  --dp-typography-metadata: 14px;
+  --dp-typography-lead: 17px;
+  --dp-typography-item-title: 24px;
+  --dp-typography-regular: 400;
+  --dp-typography-strong: 700;
+  --dp-typography-display: 750;
+  --dp-typography-label-tracking: 0.12em;
+  --dp-typography-body-leading: 1.5;
+  --dp-spacing-gutter: clamp(20px, 3.3333cqw, 64px);
+  --dp-radius-control: 0;
+  --dp-border-rule: 2px;
+  --dp-motion-feedback: 0s;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-ground: var(--dp-color-ground);
+  --color-ink: var(--dp-color-ink);
+  --color-surface: var(--dp-color-surface);
+  --color-accent: var(--dp-color-accent);
+  --color-accent-hover: var(--dp-color-accent-hover);
+  --color-muted: var(--dp-color-muted);
+
+  --font-sans: var(--dp-typography-face);
+
+  --font-weight-regular: var(--dp-typography-regular);
+  --font-weight-strong: var(--dp-typography-strong);
+
+  --text-body: var(--dp-typography-body);
+  --text-body--line-height: var(--dp-typography-body-leading);
+
+  --text-label: var(--dp-typography-label);
+  --text-label--line-height: 1.2;
+  --text-label--letter-spacing: var(--dp-typography-label-tracking);
+
+  --text-metadata: var(--dp-typography-metadata);
+  --text-metadata--line-height: 1.5;
+
+  --text-lead: var(--dp-typography-lead);
+  --text-lead--line-height: 1.6;
+
+  --text-item-title: var(--dp-typography-item-title);
+  --text-item-title--line-height: 1.15;
+
+  --text-display: clamp(64px, 9vw, 148px);
+  --text-display--line-height: 0.94;
+  --text-display--letter-spacing: -0.045em;
+  --text-display--font-weight: var(--dp-typography-display);
+
+  --spacing-gutter: var(--dp-spacing-gutter);
+  --radius-control: var(--dp-radius-control);
+  --default-transition-duration: var(--dp-motion-feedback);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@layer base {
+  html {
+    background: var(--dp-color-ground);
+    color: var(--dp-color-ink);
   }
-}
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  body {
+    background: var(--dp-color-ground);
+    color: var(--dp-color-ink);
+    font-family: var(--dp-typography-face);
+    font-size: var(--dp-typography-body);
+    line-height: var(--dp-typography-body-leading);
+    container-type: inline-size;
+  }
+
+  ::selection {
+    background: var(--dp-color-accent);
+    color: var(--dp-color-ground);
+  }
+
+  :focus-visible {
+    outline: var(--dp-border-rule) solid var(--dp-color-accent);
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    ::before,
+    ::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      scroll-behavior: auto !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
 }
