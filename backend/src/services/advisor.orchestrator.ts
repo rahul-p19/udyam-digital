@@ -3,7 +3,11 @@ import {
   missingFields,
   saveAdvisorSession,
 } from "./advisor.service.js";
-import { extractWithGemini, validateExtraction } from "./gemini.service.js";
+import {
+  extractWithGemini,
+  generateAdvisorResponse,
+  validateExtraction,
+} from "./gemini.service.js";
 import type {
   AdvisorMessage,
   AdvisorSession,
@@ -16,7 +20,8 @@ const questions: Record<string, string> = {
     "How many people work at your business, including yourself?",
   locationCount: "How many branches or business locations do you operate?",
   currentInfrastructure: "What connectivity do you currently use?",
-  requirements: "What services are you looking for?",
+  requirements:
+    "What services are you looking for? We offer: business broadband, business SIM cards, WhatsApp/SMS communication, cloud email, cloud storage, cybersecurity, CCTV connectivity, POS connectivity, dedicated bandwidth, and IoT connectivity. You can pick one or more, or describe what you need.",
   monthlyBudget:
     "What is your approximate monthly budget for these services in INR?",
 };
@@ -40,24 +45,49 @@ function parseNumber(message: string, expression: RegExp): number | null {
   return Number.isInteger(value) && value > 0 ? value : null;
 }
 
+const CORRECTION_PATTERN =
+  /\b(actually|no[,.]?\s*i\s+meant|change\s+that\s+to|correction[,:]|i\s+meant|wait[,.]?\s*just|just|only)\b/i;
+
+function isCorrectionIntent(message: string): boolean {
+  return CORRECTION_PATTERN.test(message.slice(0, 60));
+}
+
 function heuristicExtraction(message: string): Partial<BusinessProfile> {
   const lower = message.toLowerCase();
   const result: Partial<BusinessProfile> = {};
-  const employees = parseNumber(
-    message,
-    /(?:^|\b)(?:with|have|including myself|employees?|people|staff)\D{0,15}(\d[\d,]*|one|two|three|four|five|six|seven|eight|nine|ten)/i,
-  );
-  const locations = parseNumber(
-    message,
-    /(?:^|\b)(?:have|operate|run|manage)\D{0,15}(\d[\d,]*|one|two|three|four|five|six|seven|eight|nine|ten)\s+(?:branches?|locations?|stores?)/i,
-  );
+  const employees =
+    parseNumber(
+      message,
+      /(?:^|\b)(?:with|have|including myself|employees?|people|staff)\D{0,15}(\d[\d,]*|one|two|three|four|five|six|seven|eight|nine|ten)/i,
+    ) ??
+    parseNumber(
+      message,
+      /\b(\d[\d,]*|one|two|three|four|five|six|seven|eight|nine|ten)\s+(?:employees?|people|staff|workers?)\b/i,
+    );
+  const locations =
+    parseNumber(
+      message,
+      /(?:^|\b)(?:have|operate|run|manage)\D{0,15}(\d[\d,]*|one|two|three|four|five|six|seven|eight|nine|ten)\s+(?:branches?|locations?|stores?)/i,
+    ) ??
+    parseNumber(
+      message,
+      /\b(\d[\d,]*|one|two|three|four|five|six|seven|eight|nine|ten)\s+(?:branches?|locations?|stores?)\b/i,
+    );
   if (employees !== null) result.employeeCount = employees;
   if (locations !== null) result.locationCount = locations;
 
-  const businessMatch = lower.match(
-    /(?:own|run|operate|manage|i am in|i'm in)\s+(?:a|an)?\s*([^,.]+?)(?:\s+with\s+\d|\s+and\s+|\s*$)/i,
-  );
-  if (businessMatch?.[1]) result.businessType = businessMatch[1].trim();
+  const businessPatterns = [
+    /(?:own|run|operate|manage|have|working at|i\s+am\s+(?:in|a|an)|i'?m\s+(?:in|a|an|running))\s+(?:a|an|the)?\s*([^,.]{3,60})(?:\s+with\s+\d|\s*,|\s+and\s+|\s*$)/i,
+    /it'?s?\s+(?:a|an)\s+([^,.]{3,60})/i,
+    /^(?:a|an)\s+([^,.]{3,60})\s*$/i,
+  ];
+  for (const pattern of businessPatterns) {
+    const m = lower.match(pattern);
+    if (m?.[1]) {
+      result.businessType = m[1].trim();
+      break;
+    }
+  }
 
   const infrastructure: string[] = [];
   if (lower.includes("no internet")) infrastructure.push("no_internet");
@@ -110,6 +140,7 @@ function heuristicExtraction(message: string): Partial<BusinessProfile> {
 function mergeProfile(
   profile: BusinessProfile,
   updates: Partial<BusinessProfile>,
+  correction = false,
 ): BusinessProfile {
   const next = { ...profile };
   for (const field of [
@@ -124,7 +155,9 @@ function mergeProfile(
   }
   for (const field of ["currentInfrastructure", "requirements"] as const) {
     if (updates[field]?.length) {
-      next[field] = [...new Set([...next[field], ...updates[field]])];
+      next[field] = correction
+        ? [...new Set(updates[field])]
+        : [...new Set([...next[field], ...updates[field]])];
     }
   }
   if (updates.monthlyBudget) next.monthlyBudget = updates.monthlyBudget;
@@ -159,6 +192,7 @@ export async function processAdvisorMessage(
     content: message,
     createdAt: new Date().toISOString(),
   };
+  const correction = isCorrectionIntent(message);
   const heuristic = heuristicExtraction(message);
   let modelUpdates: Partial<BusinessProfile> = {};
   try {
@@ -168,27 +202,76 @@ export async function processAdvisorMessage(
   } catch (error) {
     console.error("Advisor extraction failed:", error);
   }
-  session.profile = mergeProfile(session.profile, {
+  const merged: Partial<BusinessProfile> = {
     ...heuristic,
     ...modelUpdates,
     monthlyBudget: heuristic.monthlyBudget?.isFlexible
       ? heuristic.monthlyBudget
       : modelUpdates.monthlyBudget ?? heuristic.monthlyBudget,
-  });
+  };
+
+  // Context-aware fallbacks: when advisor just asked a specific question and heuristic+Gemini both missed
+  if (
+    !merged.businessType &&
+    !session.profile.businessType &&
+    session.currentQuestion === questions.businessType
+  ) {
+    const cleaned = message
+      .trim()
+      .replace(/^(?:i\s+(?:own|have|run|operate)\s+(?:a|an|the)?\s*|a\s+|an\s+|the\s+)/i, "")
+      .slice(0, 60);
+    if (cleaned && !/^\d+$/.test(cleaned)) {
+      merged.businessType = cleaned;
+    }
+  }
+  if (
+    merged.employeeCount === undefined &&
+    session.profile.employeeCount === null &&
+    session.currentQuestion === questions.employeeCount
+  ) {
+    const n = parseNumber(message, /(\d[\d,]*|one|two|three|four|five|six|seven|eight|nine|ten)/i);
+    if (n !== null) merged.employeeCount = n;
+  }
+  if (
+    merged.locationCount === undefined &&
+    session.profile.locationCount === null &&
+    session.currentQuestion === questions.locationCount
+  ) {
+    const n = parseNumber(message, /(\d[\d,]*|one|two|three|four|five|six|seven|eight|nine|ten)/i);
+    if (n !== null) merged.locationCount = n;
+  }
+
+  session.profile = mergeProfile(session.profile, merged, correction);
   session.profile.profileComplete = missingFields(session.profile).length === 0;
   session.messages.push(userMessage);
   const fields = missingFields(session.profile);
-  let assistantMessage: string;
+
   if (session.profile.profileComplete) {
     session.status = "complete";
     session.currentQuestion = null;
-    assistantMessage =
-      "Thanks — I have everything I need. Your business profile is complete. I can now prepare suitable product recommendations.";
   } else {
     session.status = "in_progress";
     session.currentQuestion = nextQuestion(session.profile);
-    assistantMessage = session.currentQuestion ?? "Could you share more about your business needs?";
   }
+
+  const fallbackMessage = session.profile.profileComplete
+    ? "Thanks — I have everything I need. Your business profile is complete. I can now prepare suitable product recommendations."
+    : session.currentQuestion ?? "Could you share more about your business needs?";
+
+  let assistantMessage = fallbackMessage;
+  try {
+    const generated = await generateAdvisorResponse(
+      session.profile,
+      session.messages.slice(-7, -1),
+      message,
+      fields,
+      session.profile.profileComplete,
+    );
+    if (generated) assistantMessage = generated;
+  } catch (error) {
+    console.error("Advisor response generation failed:", error);
+  }
+
   session.messages.push({
     role: "assistant",
     content: assistantMessage,
