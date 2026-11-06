@@ -82,6 +82,6 @@ export const env = {
   },
   bcryptRounds: readNumber("BCRYPT_ROUNDS", 10),
   geminiApiKey,
-  geminiModel: readString("GEMINI_MODEL", "gemini-3.5-flash"),
+  geminiModel: readString("GEMINI_MODEL", "gemini-2.5-flash"),
   geminiTimeoutMs: readNumber("GEMINI_TIMEOUT_MS", 30000),
 };

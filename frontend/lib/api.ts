@@ -23,6 +23,32 @@ export interface BusinessProfile {
   profileComplete: boolean;
 }
 
+export interface Product {
+  productId: string;
+  category: string;
+  name: string;
+  description: string;
+  unit: string;
+  monthlyPrice: {
+    min: number;
+    max: number;
+    currency: "INR";
+  };
+  setupFee: number;
+  contractMonths: number;
+  typicalInstallDays: number;
+}
+
+export interface ScoredProduct extends Product {
+  score: number;
+  matchReasons: string[];
+  eligibleCityTiers: number[];
+  minEmployees: number;
+  minSites: number;
+  requiresGSTIN: boolean;
+  targetSegments: string[];
+}
+
 interface AdvisorResponse {
   sessionId: string;
   assistantMessage: string;
@@ -266,5 +292,78 @@ export const advisorApi = {
       }>;
       status: "in_progress" | "complete";
     }>(`/api/advisor/session/${encodeURIComponent(sessionId)}`);
+  },
+};
+
+export const catalogueApi = {
+  list() {
+    return request<{ products: Product[] }>("/api/products");
+  },
+};
+
+export interface QuoteProduct {
+  productId: string;
+  name: string;
+  category: string;
+  unit: string;
+  monthlyPriceMin: number;
+  monthlyPriceMax: number;
+  setupFee: number;
+  contractMonths: number;
+  typicalInstallDays: number;
+}
+
+export interface Quote {
+  quoteId: string;
+  sessionId: string;
+  products: QuoteProduct[];
+  totalMonthlyMin: number;
+  totalMonthlyMax: number;
+  totalSetupFee: number;
+  contractMonths: number;
+  status: "draft" | "confirmed" | "expired";
+  createdAt: string;
+}
+
+export interface Order {
+  orderId: string;
+  quoteId: string;
+  sessionId: string;
+  contactName: string;
+  contactPhone: string;
+  status: "submitted" | "confirmed" | "in_progress" | "activated" | "cancelled";
+  estimatedActivationDate: string | null;
+  submittedAt: string;
+  quote: Quote;
+}
+
+export const quoteApi = {
+  create(sessionId: string, productIds: string[]) {
+    return request<Quote>("/api/quote", {
+      method: "POST",
+      body: { sessionId, productIds },
+    });
+  },
+  get(quoteId: string) {
+    return request<Quote>(`/api/quote/${encodeURIComponent(quoteId)}`);
+  },
+  placeOrder(quoteId: string, contactName: string, contactPhone: string) {
+    return request<Order>("/api/quote/order", {
+      method: "POST",
+      body: { quoteId, contactName, contactPhone },
+    });
+  },
+  getOrder(orderId: string) {
+    return request<Order>(`/api/quote/order/${encodeURIComponent(orderId)}`);
+  },
+};
+
+export const recommendationsApi = {
+  get(sessionId: string) {
+    return request<{
+      sessionId: string;
+      recommendations: ScoredProduct[];
+      explanation: string | null;
+    }>(`/api/advisor/recommendations/${encodeURIComponent(sessionId)}`);
   },
 };

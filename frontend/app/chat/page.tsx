@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { SiteHeader } from "@/components/site-header";
+import { useRouter } from "next/navigation";
 import { advisorApi, type BusinessProfile } from "../../lib/api";
 
 type Message = {
@@ -22,7 +23,9 @@ const profileFields: Array<keyof BusinessProfile> = [
 function isCollected(profile: BusinessProfile, field: keyof BusinessProfile) {
   if (field === "monthlyBudget") {
     return (
-      profile.monthlyBudget.min !== null || profile.monthlyBudget.max !== null
+      profile.monthlyBudget.min !== null ||
+      profile.monthlyBudget.max !== null ||
+      profile.monthlyBudget.isFlexible === true
     );
   }
   const value = profile[field];
@@ -46,6 +49,7 @@ function profileSummary(profile: BusinessProfile) {
 }
 
 export default function Page() {
+  const router = useRouter();
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [profile, setProfile] = useState<BusinessProfile | null>(null);
@@ -120,37 +124,41 @@ export default function Page() {
     : 0;
 
   return (
-    <div className="flex h-screen flex-col bg-ground">
-      <SiteHeader marker="Advisor / Session" />
+    <div className="h-screen flex flex-col">
+      <header className="h-16 border-b flex items-center justify-between px-6">
+        <div>
+          <h1 className="font-semibold text-lg">Udyam AI Advisor</h1>
+          <p className="text-xs">Your business connectivity consultant</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <span className="text-xs">{profile?.profileComplete ? "Complete" : "In progress"}</span>
+          {process.env.NODE_ENV !== "production" && (
+            <button
+              type="button"
+              onClick={() => {
+                window.localStorage.removeItem("udyam-advisor-session");
+                window.location.reload();
+              }}
+              className="text-xs border rounded px-2 py-1 opacity-50 hover:opacity-100"
+            >
+              [dev] clear session
+            </button>
+          )}
+        </div>
+      </header>
 
-      <div className="grid flex-1 grid-cols-1 overflow-hidden lg:grid-cols-12">
-        <aside className="border-b-2 border-ink px-gutter py-6 lg:col-span-3 lg:overflow-y-auto lg:border-b-0 lg:border-r-2 lg:py-10">
-          <p className="text-label font-strong uppercase text-accent">
-            Advisor
-          </p>
-          <h1 className="mt-2 text-item-title font-[750] tracking-tight text-ink">
-            Udyam AI Advisor
-          </h1>
-          <p className="mt-2 text-metadata text-muted">
-            Your business connectivity consultant
-          </p>
+      <main className="flex-1 overflow-y-auto px-4 py-8">
+        <div className="max-w-3xl mx-auto space-y-6">
+          <p className="text-sm">Business profile: {collectedCount}/6 details collected.</p>
 
-          <div className="mt-8">
-            <div className="flex items-baseline justify-between gap-2">
-              <span className="text-label font-strong uppercase text-muted">
-                Profile
-              </span>
-              <span className="text-label font-strong uppercase text-accent">
-                {collectedCount}/6
-              </span>
-            </div>
-            <div className="mt-2 h-2 w-full bg-ink/10">
-              <div
-                className="h-full bg-accent"
-                style={{
-                  width: `${(collectedCount / profileFields.length) * 100}%`,
-                }}
-              />
+          {messages.map((message, index) => (
+            <div key={`${message.createdAt}-${index}`} className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}>
+              <div className="max-w-[85%] space-y-1">
+                <p className="text-xs">{message.role === "user" ? "You" : "Udyam AI Advisor"}</p>
+                <div className="rounded-2xl border px-5 py-3">
+                  <p className="text-sm leading-7 whitespace-pre-wrap">{message.content}</p>
+                </div>
+              </div>
             </div>
             <p className="mt-3 text-metadata text-muted">
               Business profile: {collectedCount}/6 details collected.
@@ -217,63 +225,16 @@ export default function Page() {
                       Complete
                     </span>
                   </div>
-
-                  <dl className="mt-4 grid grid-cols-1 gap-px border-y-2 border-ink bg-ink/15 sm:grid-cols-2">
-                    {profileSummary(profile).map(([label, value]) => (
-                      <div key={label} className="bg-ground p-3">
-                        <dt className="text-label font-strong uppercase text-muted">
-                          {label}
-                        </dt>
-                        <dd className="mt-1 text-metadata text-ink">
-                          {value || "Not specified"}
-                        </dd>
-                      </div>
-                    ))}
-                  </dl>
-
-                  <button
-                    type="button"
-                    className="mt-6 border-2 border-accent bg-accent px-5 py-3 text-label font-strong uppercase text-white hover:border-accent-hover hover:bg-accent-hover"
-                  >
-                    Continue to product recommendations
-                  </button>
-                </section>
-              )}
-              <div ref={chatEndRef} />
-            </div>
-          </div>
-
-          <footer className="border-t-2 border-ink px-gutter py-4">
-            <form
-              onSubmit={handleSubmit}
-              className="mx-auto flex max-w-3xl items-end gap-2 border-2 border-ink p-2"
-            >
-              <textarea
-                value={inputValue}
-                onChange={(event) => setInputValue(event.target.value)}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter" && !event.shiftKey) {
-                    event.preventDefault();
-                    event.currentTarget.form?.requestSubmit();
-                  }
-                }}
-                placeholder="Tell me about your business..."
-                rows={1}
-                disabled={loading || profile?.profileComplete}
-                className="max-h-32 flex-1 resize-none border-0 bg-transparent px-2 py-2 text-body text-ink placeholder:text-muted/70 disabled:cursor-not-allowed"
-              />
+                ))}
+              </dl>
               <button
-                type="submit"
-                disabled={
-                  !inputValue.trim() ||
-                  loading ||
-                  !sessionId ||
-                  profile?.profileComplete
+                type="button"
+                onClick={() =>
+                  router.push(`/recommendations?sessionId=${encodeURIComponent(sessionId ?? "")}`)
                 }
-                className="flex h-10 w-10 shrink-0 items-center justify-center border-2 border-accent bg-accent text-white hover:border-accent-hover hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-30"
-                aria-label="Send message"
+                className="border rounded-lg px-4 py-2 text-sm"
               >
-                ↑
+                Continue to product recommendations
               </button>
             </form>
             <p className="mx-auto mt-3 max-w-3xl text-center text-metadata text-muted">
