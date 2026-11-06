@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
+import { SiteHeader } from "@/components/site-header";
 import { ApiError, kycApi, type KycVerification } from "@/lib/api";
 
 const MAX_FILE_SIZE_BYTES = 8 * 1024 * 1024;
@@ -62,19 +63,17 @@ function FileUploadCard({
   onClear: () => void;
 }) {
   return (
-    <div className="flex h-full flex-col rounded-xl border border-[#3E4146]/12 bg-white p-4 shadow-[0_1px_2px_rgba(62,65,70,0.04)]">
+    <div className="flex h-full flex-col border border-ink/20 bg-ground p-4">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-sm font-semibold text-[#3E4146]">{title}</p>
-          <p className="mt-1 text-xs leading-5 text-[#3E4146]/60">
-            {description}
-          </p>
+          <p className="text-metadata font-strong text-ink">{title}</p>
+          <p className="mt-1 text-metadata text-muted">{description}</p>
         </div>
         <span
-          className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
+          className={`flex h-7 w-7 shrink-0 items-center justify-center border-2 text-label font-strong ${
             file
-              ? "bg-[#E40000] text-white"
-              : "bg-[#E40000]/10 text-[#E40000]"
+              ? "border-accent bg-accent text-white"
+              : "border-ink/20 text-accent"
           }`}
         >
           {file ? "✓" : "↑"}
@@ -82,19 +81,19 @@ function FileUploadCard({
       </div>
 
       {file ? (
-        <div className="mt-4 rounded-lg border border-[#E40000]/15 bg-[#FFFBFB] p-3">
-          <p className="truncate text-xs font-medium text-[#3E4146]">
+        <div className="mt-4 border-l-2 border-accent bg-surface p-3">
+          <p className="truncate text-metadata font-strong text-ink">
             {file.name}
           </p>
           <div className="mt-1 flex items-center justify-between gap-3">
-            <span className="text-[11px] text-[#3E4146]/55">
+            <span className="text-label font-strong uppercase text-muted">
               {formatBytes(file.size)}
             </span>
             <button
               type="button"
               onClick={onClear}
               disabled={disabled}
-              className="text-[11px] font-semibold text-[#E40000] underline underline-offset-2 disabled:opacity-50"
+              className="text-label font-strong uppercase text-accent underline underline-offset-4 hover:text-accent-hover disabled:opacity-50"
             >
               Remove
             </button>
@@ -103,7 +102,7 @@ function FileUploadCard({
       ) : (
         <label
           htmlFor={inputId}
-          className={`mt-4 flex cursor-pointer items-center justify-center rounded-lg border border-dashed border-[#3E4146]/20 bg-[#FFFBFB] px-3 py-4 text-center text-xs font-medium text-[#3E4146]/65 transition-colors hover:border-[#E40000]/40 hover:bg-[#FFF1F1] ${
+          className={`mt-4 flex cursor-pointer items-center justify-center border-2 border-dashed border-ink/25 bg-surface px-3 py-4 text-center text-label font-strong uppercase text-ink hover:border-accent hover:text-accent ${
             disabled ? "pointer-events-none opacity-60" : ""
           }`}
         >
@@ -220,48 +219,33 @@ export default function KycVerifyPage() {
 
   if (verification) {
     return (
-      <div className="min-h-screen bg-white text-[#3E4146]">
-        <header className="border-b border-[#E40000]/15 bg-white">
-          <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-6 py-4">
-            <Link href="/" className="flex items-center gap-2.5">
-              <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#E40000] text-lg font-black lowercase text-white">
-                a
-              </span>
-              <span className="text-lg font-semibold tracking-tight text-[#E40000]">
-                udyam digital
-              </span>
-            </Link>
-            <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#3E4146]/55">
-              Business KYC
-            </span>
-          </div>
-          <div className="h-1 bg-[#E40000]" />
-        </header>
+      <div className="min-h-screen bg-ground text-ink">
+        <SiteHeader marker="Business KYC" />
 
-        <main className="mx-auto max-w-3xl px-6 py-10 sm:py-14">
-          <div className="rounded-xl border border-[#1B7F4B]/20 bg-[#F0FFF6] p-6 sm:p-8">
-            <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#1B7F4B] text-lg font-bold text-white">
+        <main className="mx-auto max-w-3xl px-gutter py-10 sm:py-14">
+          <div className="border-2 border-ink bg-ink p-6 text-white sm:p-8">
+            <span className="flex h-10 w-10 items-center justify-center border-2 border-accent bg-accent text-label font-strong text-white">
               ✓
             </span>
-            <h1 className="mt-4 text-3xl font-semibold tracking-tight text-[#3E4146]">
+            <h1 className="mt-4 text-4xl font-[750] leading-none tracking-tight text-white">
               Business KYC verified
             </h1>
-            <p className="mt-3 text-sm leading-6 text-[#3E4146]/70">
+            <p className="mt-3 max-w-xl text-body text-white/75">
               Your documents matched the GST and Udyam registry records.
             </p>
-            <p className="mt-4 break-all rounded-lg bg-white/70 px-3 py-2 text-xs text-[#3E4146]/60">
+            <p className="mt-4 break-all border border-white/25 px-3 py-2 text-metadata text-white/80">
               Reference: {verification.id}
             </p>
             <div className="mt-6 flex flex-col gap-3 sm:flex-row">
               <Link
                 href="/dashboard"
-                className="inline-flex items-center justify-center rounded-md bg-[#E40000] px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#C30000]"
+                className="inline-flex items-center justify-center border-2 border-accent bg-accent px-5 py-3 text-label font-strong uppercase text-white hover:border-accent-hover hover:bg-accent-hover"
               >
                 Go to dashboard
               </Link>
               <Link
                 href="/kyc/consent"
-                className="inline-flex items-center justify-center rounded-md border border-[#3E4146]/15 bg-white px-5 py-2.5 text-sm font-medium text-[#3E4146] transition-colors hover:bg-[#FFF1F1]"
+                className="inline-flex items-center justify-center border-2 border-white px-5 py-3 text-label font-strong uppercase text-white hover:bg-white hover:text-ink"
               >
                 Review consent
               </Link>
@@ -273,55 +257,40 @@ export default function KycVerifyPage() {
   }
 
   return (
-    <div className="min-h-screen bg-white text-[#3E4146]">
-      <header className="border-b border-[#E40000]/15 bg-white">
-        <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-6 py-4">
-          <Link href="/" className="flex items-center gap-2.5">
-            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#E40000] text-lg font-black lowercase text-white">
-              a
-            </span>
-            <span className="text-lg font-semibold tracking-tight text-[#E40000]">
-              udyam digital
-            </span>
-          </Link>
-          <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#3E4146]/55">
-            Business KYC
-          </span>
-        </div>
-        <div className="h-1 bg-[#E40000]" />
-      </header>
+    <div className="min-h-screen bg-ground text-ink">
+      <SiteHeader marker="Business KYC" />
 
-      <main className="mx-auto max-w-3xl px-6 py-10 sm:py-14">
+      <main className="mx-auto max-w-5xl px-gutter py-10 sm:py-14">
         <nav
           aria-label="KYC progress"
-          className="mb-8 flex items-center gap-3 text-xs font-medium"
+          className="mb-8 flex items-center gap-3 text-label font-strong uppercase"
         >
-          <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#E40000] text-white">
+          <span className="flex h-7 w-7 items-center justify-center border-2 border-accent bg-accent text-white">
             ✓
           </span>
-          <span className="text-[#E40000]">Consent</span>
-          <span className="h-px flex-1 bg-[#E40000]/20" />
-          <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#E40000] text-white">
+          <span className="text-accent">Consent</span>
+          <span className="h-0.5 flex-1 bg-accent" />
+          <span className="flex h-7 w-7 items-center justify-center border-2 border-accent bg-accent text-white">
             2
           </span>
-          <span className="text-[#E40000]">Verify documents</span>
+          <span className="text-accent">Verify documents</span>
         </nav>
 
-        <div className="mb-8">
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#E40000]">
+        <div className="border-b-2 border-ink pb-8">
+          <p className="text-label font-strong uppercase text-accent">
             Step 2 of 2
           </p>
-          <h1 className="mt-2 text-3xl font-semibold tracking-tight text-[#3E4146] sm:text-4xl">
+          <h1 className="mt-3 max-w-3xl text-4xl font-[750] leading-none tracking-tight text-ink sm:text-5xl">
             Verify your business documents
           </h1>
-          <p className="mt-4 max-w-2xl text-sm leading-6 text-[#3E4146]/75">
+          <p className="mt-5 max-w-2xl text-body text-muted">
             Upload all four documents. We extract the required details, compare
             them with the GST and Udyam registries, and discard the uploaded
             files after processing.
           </p>
         </div>
 
-        <div className="mb-6 rounded-xl border border-[#E40000]/20 bg-[#FFF1F1] px-4 py-3 text-xs leading-5 text-[#3E4146]/75">
+        <div className="mt-8 border-l-2 border-accent bg-surface px-4 py-3 text-metadata text-ink">
           Use clear, full-page photos or scans. Blurred, cropped, or password
           protected files cannot be verified.
         </div>
@@ -329,13 +298,13 @@ export default function KycVerifyPage() {
         {error ? (
           <p
             role="alert"
-            className="mb-6 rounded-md border border-[#E40000]/20 bg-[#FFF1F1] px-3 py-2 text-sm text-[#B30000]"
+            className="mt-6 border-l-2 border-accent bg-surface px-3 py-2 text-metadata text-accent"
           >
             {error}
           </p>
         ) : null}
 
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} className="mt-6">
           <fieldset disabled={pending}>
             <legend className="sr-only">KYC documents</legend>
             <div className="grid gap-4 sm:grid-cols-2">
@@ -354,13 +323,13 @@ export default function KycVerifyPage() {
             </div>
           </fieldset>
 
-          <div className="mt-6 rounded-xl border border-[#3E4146]/12 bg-[#FFFBFB] p-4 sm:p-5">
+          <div className="mt-6 border-2 border-ink bg-surface p-4 sm:p-5">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <p className="text-sm font-medium text-[#3E4146]">
+                <p className="text-metadata font-strong text-ink">
                   {selectedCount} of {documents.length} documents selected
                 </p>
-                <p className="mt-1 text-xs leading-5 text-[#3E4146]/55">
+                <p className="mt-1 text-metadata text-muted">
                   JPG, PNG, or PDF up to 8 MB each. Files are processed in
                   memory and are not retained.
                 </p>
@@ -368,7 +337,7 @@ export default function KycVerifyPage() {
               <button
                 type="submit"
                 disabled={pending || !allSelected}
-                className="inline-flex items-center justify-center rounded-md bg-[#E40000] px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#C30000] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#E40000] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+                className="inline-flex items-center justify-center border-2 border-accent bg-accent px-5 py-3 text-label font-strong uppercase text-white hover:border-accent-hover hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {pending ? "Verifying documents..." : "Verify documents"}
               </button>
@@ -376,11 +345,11 @@ export default function KycVerifyPage() {
           </div>
         </form>
 
-        <p className="mt-5 text-center text-xs leading-5 text-[#3E4146]/55">
+        <p className="mt-5 text-center text-metadata text-muted">
           Having trouble?{" "}
           <Link
             href="/kyc/agent"
-            className="font-medium text-[#E40000] underline underline-offset-2"
+            className="font-strong text-accent underline underline-offset-4 hover:text-accent-hover"
           >
             Get help from an agent
           </Link>

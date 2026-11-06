@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { SiteHeader } from "@/components/site-header";
 import { ApiError, authApi, type AuthUser } from "@/lib/api";
 
 export default function DashboardPage() {
@@ -53,53 +54,75 @@ export default function DashboardPage() {
   }
 
   return (
-    <main className="flex flex-1 items-center justify-center px-6 py-16">
-      <div className="w-full max-w-md rounded-xl border border-black/10 bg-white p-8 shadow-sm dark:border-white/10 dark:bg-zinc-950">
-        {loading ? (
-          <p className="text-sm text-zinc-600 dark:text-zinc-400">
-            Loading your session...
+    <main className="flex flex-1 flex-col">
+      <SiteHeader marker="Account / Dashboard" />
+
+      <section className="grid flex-1 grid-cols-1 lg:grid-cols-12">
+        <aside className="border-b-2 border-ink px-gutter py-10 lg:col-span-3 lg:border-b-0 lg:border-r-2 lg:py-16">
+          <p className="text-label font-strong uppercase text-accent">
+            03 / Account
           </p>
-        ) : error ? (
-          <div className="space-y-4">
-            <p
-              role="alert"
-              className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950/40 dark:text-red-300"
-            >
-              {error}
+          <h1 className="mt-4 text-4xl font-[750] leading-none tracking-tight text-ink">
+            Dashboard
+          </h1>
+          <p className="mt-4 max-w-xs text-metadata text-muted">
+            Your Udyam Digital workspace.
+          </p>
+        </aside>
+
+        <div className="px-gutter py-10 lg:col-span-9 lg:py-16">
+          {loading ? (
+            <p className="text-metadata text-muted">
+              Loading your session...
             </p>
-            <button
-              type="button"
-              onClick={() => router.replace("/login")}
-              className="rounded-md border border-black/15 px-4 py-2 text-sm font-medium dark:border-white/15"
-            >
-              Go to login
-            </button>
-          </div>
-        ) : user ? (
-          <div className="space-y-6">
-            <div>
-              <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400">
+          ) : error ? (
+            <div className="max-w-md space-y-6 border-t-2 border-ink pt-6">
+              <p
+                role="alert"
+                className="border-l-2 border-accent bg-surface px-3 py-2 text-metadata text-accent"
+              >
+                {error}
+              </p>
+              <button
+                type="button"
+                onClick={() => router.replace("/login")}
+                className="border-2 border-ink px-5 py-3 text-label font-strong uppercase text-ink hover:bg-ink hover:text-white"
+              >
+                Go to login
+              </button>
+            </div>
+          ) : user ? (
+            <div className="max-w-xl">
+              <p className="text-label font-strong uppercase text-muted">
                 Signed in as
               </p>
-              <h1 className="mt-1 text-2xl font-semibold tracking-tight">
+              <p className="mt-2 border-b-2 border-ink pb-5 text-4xl font-[750] leading-none tracking-tight text-ink">
                 {user.name ?? user.email}
-              </h1>
-              <p className="text-sm text-zinc-600 dark:text-zinc-400">
-                {user.email}
               </p>
-            </div>
 
-            <button
-              type="button"
-              onClick={handleLogout}
-              disabled={loggingOut}
-              className="w-full rounded-md bg-foreground px-4 py-2 text-sm font-medium text-background transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {loggingOut ? "Logging out..." : "Log out"}
-            </button>
-          </div>
-        ) : null}
-      </div>
+              <dl className="divide-y divide-ink/15 border-b-2 border-ink">
+                <div className="flex flex-wrap items-baseline justify-between gap-2 py-4">
+                  <dt className="text-label font-strong uppercase text-muted">
+                    Email
+                  </dt>
+                  <dd className="break-all text-metadata text-ink">
+                    {user.email}
+                  </dd>
+                </div>
+              </dl>
+
+              <button
+                type="button"
+                onClick={handleLogout}
+                disabled={loggingOut}
+                className="mt-8 w-full border-2 border-accent bg-accent px-6 py-3 text-label font-strong uppercase text-white hover:border-accent-hover hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+              >
+                {loggingOut ? "Logging out..." : "Log out"}
+              </button>
+            </div>
+          ) : null}
+        </div>
+      </section>
     </main>
   );
 }

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
+import { SiteHeader } from "@/components/site-header";
 import {
   ApiError,
   kycApi,
@@ -144,48 +145,33 @@ export default function KycConsentPage() {
   }
 
   return (
-    <div className="min-h-screen bg-white text-[#3E4146]">
-      <header className="border-b border-[#E40000]/15 bg-white">
-        <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-6 py-4">
-          <Link href="/" className="flex items-center gap-2.5">
-            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#E40000] text-lg font-black lowercase text-white">
-              a
-            </span>
-            <span className="text-lg font-semibold tracking-tight text-[#E40000]">
-              udyam digital
-            </span>
-          </Link>
-          <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#3E4146]/55">
-            Business KYC
-          </span>
-        </div>
-        <div className="h-1 bg-[#E40000]" />
-      </header>
+    <div className="min-h-screen bg-ground text-ink">
+      <SiteHeader marker="Business KYC" />
 
-      <main className="mx-auto max-w-3xl px-6 py-10 sm:py-14">
+      <main className="mx-auto max-w-5xl px-gutter py-10 sm:py-14">
         <nav
           aria-label="KYC progress"
-          className="mb-8 flex items-center gap-3 text-xs font-medium"
+          className="mb-8 flex items-center gap-3 text-label font-strong uppercase"
         >
-          <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#E40000] text-white">
+          <span className="flex h-7 w-7 items-center justify-center border-2 border-accent bg-accent text-white">
             1
           </span>
-          <span className="text-[#E40000]">Consent</span>
-          <span className="h-px flex-1 bg-[#E40000]/20" />
-          <span className="flex h-7 w-7 items-center justify-center rounded-full border border-[#3E4146]/20 text-[#3E4146]/45">
+          <span className="text-accent">Consent</span>
+          <span className="h-0.5 flex-1 bg-ink/15" />
+          <span className="flex h-7 w-7 items-center justify-center border-2 border-ink/20 text-muted">
             2
           </span>
-          <span className="text-[#3E4146]/45">Verify documents</span>
+          <span className="text-muted">Verify documents</span>
         </nav>
 
-        <div className="mb-8">
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#E40000]">
+        <div className="border-b-2 border-ink pb-8">
+          <p className="text-label font-strong uppercase text-accent">
             Digital Personal Data Protection Act, 2023
           </p>
-          <h1 className="mt-2 text-3xl font-semibold tracking-tight text-[#3E4146] sm:text-4xl">
+          <h1 className="mt-3 max-w-3xl text-4xl font-[750] leading-none tracking-tight text-ink sm:text-5xl">
             KYC consent for your business
           </h1>
-          <p className="mt-4 max-w-2xl text-sm leading-6 text-[#3E4146]/75">
+          <p className="mt-5 max-w-2xl text-body text-muted">
             Before we verify your business, please review how Udyam Digital
             collects, uses, and shares your business KYC information. Your
             consent must be specific, informed, and given by a clear affirmative
@@ -193,37 +179,34 @@ export default function KycConsentPage() {
           </p>
         </div>
 
-        <div className="mb-8 rounded-xl border border-[#E40000]/20 bg-[#FFF1F1] px-4 py-3 text-sm leading-6 text-[#3E4146]/80">
-          <strong className="font-semibold text-[#E40000]">
+        <div className="mt-8 border-l-2 border-accent bg-surface px-4 py-3 text-metadata text-ink">
+          <strong className="font-strong text-accent">
             This is business KYC.
           </strong>{" "}
           This consent covers verification of your registered business only. It
           does not cover personal KYC for individual customers.
         </div>
 
-        <div className="space-y-5">
-          <section className="rounded-xl border border-[#3E4146]/12 bg-white p-5 shadow-[0_1px_2px_rgba(62,65,70,0.04)] sm:p-6">
-            <h2 className="text-base font-semibold text-[#3E4146]">
+        <div className="mt-6">
+          <section className="border-t-2 border-ink py-6">
+            <h2 className="text-item-title font-[750] tracking-tight text-ink">
               1. What we collect
             </h2>
-            <p className="mt-1 text-sm text-[#3E4146]/65">
+            <p className="mt-1 text-metadata text-muted">
               We collect only the following KYC data for your business.
             </p>
-            <ul className="mt-4 grid gap-3 sm:grid-cols-2">
+            <ul className="mt-4 grid gap-px border-y border-ink/15 bg-ink/15 sm:grid-cols-2">
               {dataCategories.map((item) => (
-                <li
-                  key={item.id}
-                  className="rounded-lg border border-[#3E4146]/10 bg-[#FFFBFB] p-3.5"
-                >
+                <li key={item.id} className="bg-ground p-3.5">
                   <div className="flex items-start gap-2.5">
-                    <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#E40000]/10 text-[11px] font-bold text-[#E40000]">
+                    <span className="mt-0.5 text-label font-strong text-accent">
                       ✓
                     </span>
                     <div>
-                      <p className="text-sm font-medium text-[#3E4146]">
+                      <p className="text-metadata font-strong text-ink">
                         {item.title}
                       </p>
-                      <p className="mt-0.5 text-xs leading-5 text-[#3E4146]/60">
+                      <p className="mt-0.5 text-metadata text-muted">
                         {item.description}
                       </p>
                     </div>
@@ -233,21 +216,21 @@ export default function KycConsentPage() {
             </ul>
           </section>
 
-          <section className="rounded-xl border border-[#3E4146]/12 bg-white p-5 shadow-[0_1px_2px_rgba(62,65,70,0.04)] sm:p-6">
-            <h2 className="text-base font-semibold text-[#3E4146]">
+          <section className="border-t-2 border-ink py-6">
+            <h2 className="text-item-title font-[750] tracking-tight text-ink">
               2. Why we process it
             </h2>
-            <ul className="mt-4 space-y-3">
+            <ul className="mt-4 divide-y divide-ink/15 border-y border-ink/15">
               {purposes.map((item) => (
-                <li key={item.id} className="flex items-start gap-3">
-                  <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#E40000]/10 text-[11px] font-bold text-[#E40000]">
+                <li key={item.id} className="flex items-start gap-3 py-3">
+                  <span className="mt-0.5 text-label font-strong text-accent">
                     ✓
                   </span>
                   <div>
-                    <p className="text-sm font-medium text-[#3E4146]">
+                    <p className="text-metadata font-strong text-ink">
                       {item.title}
                     </p>
-                    <p className="text-xs leading-5 text-[#3E4146]/60">
+                    <p className="text-metadata text-muted">
                       {item.description}
                     </p>
                   </div>
@@ -256,38 +239,34 @@ export default function KycConsentPage() {
             </ul>
           </section>
 
-          <section className="rounded-xl border border-[#3E4146]/12 bg-white p-5 shadow-[0_1px_2px_rgba(62,65,70,0.04)] sm:p-6">
-            <h2 className="text-base font-semibold text-[#3E4146]">
+          <section className="border-t-2 border-ink py-6">
+            <h2 className="text-item-title font-[750] tracking-tight text-ink">
               3. How we handle it
             </h2>
-            <dl className="mt-4 space-y-4 text-sm leading-6">
-              <div>
-                <dt className="font-medium text-[#3E4146]">
-                  Who we share it with
-                </dt>
-                <dd className="mt-0.5 text-[#3E4146]/65">
+            <dl className="mt-4 divide-y divide-ink/15 border-y border-ink/15 text-metadata">
+              <div className="py-3">
+                <dt className="font-strong text-ink">Who we share it with</dt>
+                <dd className="mt-1 text-muted">
                   Udyam Digital, its authorised KYC verification partners, and
                   government portals such as the GST and Udyam registration
                   systems, only for the purposes listed above.
                 </dd>
               </div>
-              <div>
-                <dt className="font-medium text-[#3E4146]">How long we keep it</dt>
-                <dd className="mt-0.5 text-[#3E4146]/65">
+              <div className="py-3">
+                <dt className="font-strong text-ink">How long we keep it</dt>
+                <dd className="mt-1 text-muted">
                   Only for as long as needed for the purposes above or as
                   required by law. When it is no longer needed, we delete or
                   anonymise it.
                 </dd>
               </div>
-              <div>
-                <dt className="font-medium text-[#3E4146]">
-                  How you can withdraw
-                </dt>
-                <dd className="mt-0.5 text-[#3E4146]/65">
+              <div className="py-3">
+                <dt className="font-strong text-ink">How you can withdraw</dt>
+                <dd className="mt-1 text-muted">
                   Email{" "}
                   <a
                     href={`mailto:${GRIEVANCE_EMAIL}`}
-                    className="font-medium text-[#E40000] underline underline-offset-2"
+                    className="font-strong text-accent underline underline-offset-4 hover:text-accent-hover"
                   >
                     {GRIEVANCE_EMAIL}
                   </a>{" "}
@@ -301,32 +280,29 @@ export default function KycConsentPage() {
 
           <section
             id="your-rights"
-            className="rounded-xl border border-[#3E4146]/12 bg-white p-5 shadow-[0_1px_2px_rgba(62,65,70,0.04)] sm:p-6"
+            className="border-t-2 border-ink py-6"
           >
-            <h2 className="text-base font-semibold text-[#3E4146]">
+            <h2 className="text-item-title font-[750] tracking-tight text-ink">
               4. Your rights as a Data Principal
             </h2>
-            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            <div className="mt-4 grid gap-px border-y border-ink/15 bg-ink/15 sm:grid-cols-2">
               {rights.map((right) => (
-                <div
-                  key={right.title}
-                  className="rounded-lg bg-[#FFFBFB] px-3.5 py-3"
-                >
-                  <p className="text-sm font-medium text-[#3E4146]">
+                <div key={right.title} className="bg-ground px-3.5 py-3">
+                  <p className="text-metadata font-strong text-ink">
                     {right.title}
                   </p>
-                  <p className="mt-0.5 text-xs leading-5 text-[#3E4146]/60">
+                  <p className="mt-0.5 text-metadata text-muted">
                     {right.description}
                   </p>
                 </div>
               ))}
             </div>
-            <p className="mt-4 text-xs leading-5 text-[#3E4146]/60">
+            <p className="mt-4 text-metadata text-muted">
               To exercise any of these rights, contact our Data Protection
               Officer at{" "}
               <a
                 href={`mailto:${GRIEVANCE_EMAIL}`}
-                className="font-medium text-[#E40000] underline underline-offset-2"
+                className="font-strong text-accent underline underline-offset-4 hover:text-accent-hover"
               >
                 {GRIEVANCE_EMAIL}
               </a>
@@ -336,16 +312,16 @@ export default function KycConsentPage() {
           </section>
         </div>
 
-        <form onSubmit={handleSubmit} className="mt-8">
-          <div className="rounded-xl border-2 border-[#E40000]/25 bg-[#FFFBFB] p-5 sm:p-6">
-            <h2 className="text-base font-semibold text-[#3E4146]">
+        <form onSubmit={handleSubmit} className="mt-2">
+          <div className="border-2 border-ink bg-surface p-5 sm:p-6">
+            <h2 className="text-item-title font-[750] tracking-tight text-ink">
               Your consent
             </h2>
 
             {error ? (
               <p
                 role="alert"
-                className="mt-3 rounded-md border border-[#E40000]/20 bg-[#FFF1F1] px-3 py-2 text-sm text-[#B30000]"
+                className="mt-3 border-l-2 border-accent bg-ground px-3 py-2 text-metadata text-accent"
               >
                 {error}
               </p>
@@ -356,9 +332,9 @@ export default function KycConsentPage() {
                 type="checkbox"
                 checked={accepted}
                 onChange={(event) => setAccepted(event.target.checked)}
-                className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer accent-[#E40000]"
+                className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer accent-accent"
               />
-              <span className="text-sm leading-6 text-[#3E4146]">
+              <span className="text-metadata text-ink">
                 I have read and understood this notice, and I consent to Udyam
                 Digital processing the KYC data listed above for the stated
                 purposes, including sharing it with the verification partners
@@ -373,23 +349,23 @@ export default function KycConsentPage() {
                 onChange={(event) =>
                   setAuthorizedSignatory(event.target.checked)
                 }
-                className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer accent-[#E40000]"
+                className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer accent-accent"
               />
-              <span className="text-sm leading-6 text-[#3E4146]">
+              <span className="text-metadata text-ink">
                 I confirm that I am 18 years or older, that I am authorised to
                 act for this business, and that the documents I submit belong to
                 the business.
               </span>
             </label>
 
-            <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <p className="text-xs leading-5 text-[#3E4146]/55">
+            <div className="mt-5 flex flex-col gap-3 border-t border-ink/15 pt-5 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-metadata text-muted">
                 Consent version {CONSENT_VERSION} · Effective {EFFECTIVE_DATE}
               </p>
               <button
                 type="submit"
                 disabled={pending}
-                className="inline-flex items-center justify-center rounded-md bg-[#E40000] px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#C30000] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#E40000] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+                className="inline-flex items-center justify-center border-2 border-accent bg-accent px-5 py-3 text-label font-strong uppercase text-white hover:border-accent-hover hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {pending ? "Recording consent..." : "Give consent and continue"}
               </button>
@@ -397,11 +373,11 @@ export default function KycConsentPage() {
           </div>
         </form>
 
-        <p className="mt-5 text-center text-xs leading-5 text-[#3E4146]/55">
+        <p className="mt-5 text-center text-metadata text-muted">
           Changed your mind? You can{" "}
           <Link
             href="/dashboard"
-            className="font-medium text-[#E40000] underline underline-offset-2"
+            className="font-strong text-accent underline underline-offset-4 hover:text-accent-hover"
           >
             return to your dashboard
           </Link>{" "}
