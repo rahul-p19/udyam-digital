@@ -79,15 +79,17 @@ async function request<T>(
   options: RequestOptions = {},
 ): Promise<T> {
   const { body, headers, ...rest } = options;
+  const isFormData = body instanceof FormData;
 
   const response = await fetch(`${API_BASE_URL}${path}`, {
     ...rest,
     credentials: "include",
     headers: {
-      "Content-Type": "application/json",
+      ...(isFormData ? {} : { "Content-Type": "application/json" }),
       ...(headers ?? {}),
     },
-    body: body === undefined ? undefined : JSON.stringify(body),
+    body:
+      body === undefined ? undefined : isFormData ? body : JSON.stringify(body),
   });
 
   const payload = await response.json().catch(() => null);
@@ -150,6 +152,118 @@ export const authApi = {
 
   me() {
     return requestWithRefresh<AuthResponse>("/api/auth/me");
+  },
+};
+
+export type KycDataCategory =
+  | "gst_certificate"
+  | "udyam_certificate"
+  | "signatory_id"
+  | "address_proof";
+
+export type KycPurpose =
+  | "identity_verification"
+  | "regulatory_compliance"
+  | "fraud_prevention";
+
+export interface KycConsent {
+  id: string;
+  entityType: string;
+  consentVersion: string;
+  dataCategories: KycDataCategory[];
+  purposes: KycPurpose[];
+  authorizedSignatory: boolean;
+  status: "active" | "withdrawn";
+  acceptedAt: string;
+  withdrawnAt: string | null;
+}
+
+export type KycVerificationStatus = "verified" | "manual_review";
+
+export interface KycVerificationCheck {
+  key: string;
+  label: string;
+  passed: boolean;
+  detail: string | null;
+}
+
+export interface KycVerification {
+  id: string;
+  status: KycVerificationStatus;
+  checks: KycVerificationCheck[];
+  extracted: {
+    gst: {
+      gstin: string | null;
+      legalName: string | null;
+      tradeName: string | null;
+      address: string | null;
+      status: string | null;
+    };
+    udyam: {
+      udyamNumber: string | null;
+      enterpriseName: string | null;
+      enterpriseType: string | null;
+      majorActivity: string | null;
+      state: string | null;
+      city: string | null;
+    };
+    signatory: {
+      idType: "mock" | null;
+      idMasked: string | null;
+      name: string | null;
+    };
+    addressProof: {
+      name: string | null;
+      address: string | null;
+    };
+    ocr: Record<
+      string,
+      { confidence: number; pages: number; readable: boolean }
+    >;
+  };
+  createdAt: string;
+}
+
+export const kycApi = {
+  recordConsent(input: {
+    consentVersion: string;
+    dataCategories: KycDataCategory[];
+    purposes: KycPurpose[];
+    accepted: boolean;
+    authorizedSignatory: boolean;
+  }) {
+    return requestWithRefresh<{ consent: KycConsent }>("/api/kyc/consent", {
+      method: "POST",
+      body: input,
+    });
+  },
+
+  getConsent() {
+    return requestWithRefresh<{ consent: KycConsent | null }>(
+      "/api/kyc/consent",
+    );
+  },
+
+  withdrawConsent() {
+    return requestWithRefresh<{ consent: KycConsent }>("/api/kyc/consent", {
+      method: "DELETE",
+    });
+  },
+
+  verifyDocuments(formData: FormData) {
+    return requestWithRefresh<{ verification: KycVerification }>(
+      "/api/kyc/verify",
+      {
+        method: "POST",
+        body: formData,
+      },
+    );
+  },
+
+  getVerification(verificationId: string) {
+    return requestWithRefresh<{ verification: KycVerification }>(
+      `/api/kyc/verifications/${encodeURIComponent(verificationId)}`,
+    );
   },
 };
 
