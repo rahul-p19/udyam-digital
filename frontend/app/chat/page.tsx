@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { advisorApi, type BusinessProfile } from "../../lib/api";
 
 type Message = {
@@ -21,7 +22,9 @@ const profileFields: Array<keyof BusinessProfile> = [
 function isCollected(profile: BusinessProfile, field: keyof BusinessProfile) {
   if (field === "monthlyBudget") {
     return (
-      profile.monthlyBudget.min !== null || profile.monthlyBudget.max !== null
+      profile.monthlyBudget.min !== null ||
+      profile.monthlyBudget.max !== null ||
+      profile.monthlyBudget.isFlexible === true
     );
   }
   const value = profile[field];
@@ -45,6 +48,7 @@ function profileSummary(profile: BusinessProfile) {
 }
 
 export default function Page() {
+  const router = useRouter();
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [profile, setProfile] = useState<BusinessProfile | null>(null);
@@ -125,7 +129,21 @@ export default function Page() {
           <h1 className="font-semibold text-lg">Udyam AI Advisor</h1>
           <p className="text-xs">Your business connectivity consultant</p>
         </div>
-        <span className="text-xs">{profile?.profileComplete ? "Complete" : "In progress"}</span>
+        <div className="flex items-center gap-3">
+          <span className="text-xs">{profile?.profileComplete ? "Complete" : "In progress"}</span>
+          {process.env.NODE_ENV !== "production" && (
+            <button
+              type="button"
+              onClick={() => {
+                window.localStorage.removeItem("udyam-advisor-session");
+                window.location.reload();
+              }}
+              className="text-xs border rounded px-2 py-1 opacity-50 hover:opacity-100"
+            >
+              [dev] clear session
+            </button>
+          )}
+        </div>
       </header>
 
       <main className="flex-1 overflow-y-auto px-4 py-8">
@@ -157,7 +175,13 @@ export default function Page() {
                   </div>
                 ))}
               </dl>
-              <button type="button" className="border rounded-lg px-4 py-2 text-sm">
+              <button
+                type="button"
+                onClick={() =>
+                  router.push(`/recommendations?sessionId=${encodeURIComponent(sessionId ?? "")}`)
+                }
+                className="border rounded-lg px-4 py-2 text-sm"
+              >
                 Continue to product recommendations
               </button>
             </section>

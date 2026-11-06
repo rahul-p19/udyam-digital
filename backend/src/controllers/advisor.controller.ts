@@ -8,6 +8,8 @@ import {
   processAdvisorMessage,
   startAdvisorSession,
 } from "../services/advisor.orchestrator.js";
+import { computeRecommendations } from "../services/recommendations.service.js";
+import { generateBundleExplanation } from "../services/gemini.service.js";
 
 export async function createSession(_req: Request, res: Response): Promise<void> {
   const session = await startAdvisorSession(await createAdvisorSession());
@@ -32,6 +34,23 @@ export async function getSession(req: Request, res: Response): Promise<void> {
   const session = await getAdvisorSession(req.params.sessionId);
   if (!session) throw new ApiError(404, "Advisor session not found");
   res.json(session);
+}
+
+export async function recommendations(req: Request, res: Response): Promise<void> {
+  const session = await getAdvisorSession(req.params.sessionId);
+  if (!session) throw new ApiError(404, "Advisor session not found");
+
+  const conversationText = session.messages.map((m) => m.content).join(" ");
+  const scored = computeRecommendations(session.profile, conversationText);
+
+  let explanation: string | null = null;
+  try {
+    explanation = await generateBundleExplanation(session.profile, scored);
+  } catch {
+    // explanation is optional — don't fail the request
+  }
+
+  res.json({ sessionId: session.sessionId, recommendations: scored, explanation });
 }
 
 export async function chat(req: Request, res: Response): Promise<void> {
