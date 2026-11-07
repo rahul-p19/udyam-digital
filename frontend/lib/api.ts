@@ -339,22 +339,22 @@ export interface Order {
 
 export const quoteApi = {
   create(sessionId: string, productIds: string[]) {
-    return request<Quote>("/api/quote", {
+    return requestWithRefresh<Quote>("/api/quote", {
       method: "POST",
       body: { sessionId, productIds },
     });
   },
   get(quoteId: string) {
-    return request<Quote>(`/api/quote/${encodeURIComponent(quoteId)}`);
+    return requestWithRefresh<Quote>(`/api/quote/${encodeURIComponent(quoteId)}`);
   },
   placeOrder(quoteId: string, contactName: string, contactPhone: string) {
-    return request<Order>("/api/quote/order", {
+    return requestWithRefresh<Order>("/api/quote/order", {
       method: "POST",
       body: { quoteId, contactName, contactPhone },
     });
   },
   getOrder(orderId: string) {
-    return request<Order>(`/api/quote/order/${encodeURIComponent(orderId)}`);
+    return requestWithRefresh<Order>(`/api/quote/order/${encodeURIComponent(orderId)}`);
   },
 };
 

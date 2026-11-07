@@ -28,6 +28,11 @@ function ProductCard({
           <p className="text-xs text-gray-500">{product.category}</p>
           <div className="flex items-center gap-2 shrink-0">
             {isTop && <span className="text-xs font-medium">⭐ Top pick</span>}
+            {product.requiresGSTIN && (
+              <span className="text-xs font-medium border border-amber-500 text-amber-600 px-1.5 py-0.5 rounded">
+                KYC required
+              </span>
+            )}
             <input
               type="checkbox"
               checked={selected}
@@ -236,6 +241,11 @@ function RecommendationsContent() {
 
       {/* Sticky quote bar */}
       <div className="fixed bottom-0 inset-x-0 border-t bg-white px-4 py-4">
+        {error && (
+          <div className="mx-auto max-w-5xl mb-2">
+            <p role="alert" className="text-sm text-red-600">{error}</p>
+          </div>
+        )}
         <div className="mx-auto max-w-5xl flex items-center justify-between gap-4">
           <div>
             {selectedIds.size === 0 ? (
