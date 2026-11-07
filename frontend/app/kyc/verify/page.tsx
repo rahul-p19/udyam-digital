@@ -3,8 +3,10 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
+import { DigilockerModal } from "@/components/digilocker-modal";
 import { SiteHeader } from "@/components/site-header";
 import { ApiError, kycApi, type KycVerification } from "@/lib/api";
+import type { DigilockerFetchedDocument } from "@/lib/digilocker-mock";
 
 const MAX_FILE_SIZE_BYTES = 8 * 1024 * 1024;
 const ALLOWED_FILE_TYPES = ["image/jpeg", "image/png", "application/pdf"];
@@ -51,6 +53,7 @@ function FileUploadCard({
   file,
   inputId,
   disabled,
+  source,
   onSelect,
   onClear,
 }: {
@@ -59,6 +62,7 @@ function FileUploadCard({
   file: File | undefined;
   inputId: string;
   disabled: boolean;
+  source?: "digilocker";
   onSelect: (file: File) => void;
   onClear: () => void;
 }) {
@@ -82,6 +86,11 @@ function FileUploadCard({
 
       {file ? (
         <div className="mt-4 border-l-2 border-accent bg-surface p-3">
+          {source === "digilocker" ? (
+            <span className="mb-1 inline-flex items-center border border-[#0076A9] px-1.5 py-0.5 text-[10px] font-strong uppercase tracking-wider text-[#0076A9]">
+              Fetched from DigiLocker
+            </span>
+          ) : null}
           <p className="truncate text-metadata font-strong text-ink">
             {file.name}
           </p>
@@ -135,9 +144,25 @@ export default function KycVerifyPage() {
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const [verification, setVerification] = useState<KycVerification | null>(null);
+  const [digilockerOpen, setDigilockerOpen] = useState(false);
+  const [digilockerKeys, setDigilockerKeys] = useState<Set<DocumentKey>>(
+    new Set(),
+  );
 
   const selectedCount = documents.filter((document) => files[document.key]).length;
   const allSelected = selectedCount === documents.length;
+
+  function clearDigilockerSource(key: DocumentKey) {
+    setDigilockerKeys((current) => {
+      if (!current.has(key)) {
+        return current;
+      }
+
+      const next = new Set(current);
+      next.delete(key);
+      return next;
+    });
+  }
 
   function selectFile(key: DocumentKey, file: File) {
     setError(null);
@@ -153,6 +178,7 @@ export default function KycVerifyPage() {
     }
 
     setFiles((current) => ({ ...current, [key]: file }));
+    clearDigilockerSource(key);
   }
 
   function clearFile(key: DocumentKey) {
@@ -161,7 +187,22 @@ export default function KycVerifyPage() {
       delete next[key];
       return next;
     });
+    clearDigilockerSource(key);
     setError(null);
+  }
+
+  function handleDigilockerComplete(fetched: DigilockerFetchedDocument[]) {
+    setError(null);
+    setFiles((current) => {
+      const next = { ...current };
+
+      for (const document of fetched) {
+        next[document.key] = document.file;
+      }
+
+      return next;
+    });
+    setDigilockerKeys(new Set(fetched.map((document) => document.key)));
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -290,7 +331,32 @@ export default function KycVerifyPage() {
           </p>
         </div>
 
-        <div className="mt-8 border-l-2 border-accent bg-surface px-4 py-3 text-metadata text-ink">
+        <div className="mt-8 flex flex-col gap-4 border-2 border-ink bg-surface p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
+          <div className="flex items-start gap-3">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-sm bg-[#0076A9] text-xl font-bold text-white">
+              d
+            </span>
+            <div>
+              <p className="text-metadata font-strong text-ink">
+                Have a DigiLocker account?
+              </p>
+              <p className="mt-1 max-w-md text-metadata text-muted">
+                Fetch your GST, Udyam, signatory, and address documents directly
+                from DigiLocker instead of uploading them manually.
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setDigilockerOpen(true)}
+            disabled={pending}
+            className="inline-flex shrink-0 items-center justify-center bg-[#0076A9] px-5 py-3 text-label font-strong uppercase text-white hover:bg-[#005b8f] disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            Fetch from DigiLocker
+          </button>
+        </div>
+
+        <div className="mt-4 border-l-2 border-accent bg-surface px-4 py-3 text-metadata text-ink">
           Use clear, full-page photos or scans. Blurred, cropped, or password
           protected files cannot be verified.
         </div>
@@ -316,6 +382,9 @@ export default function KycVerifyPage() {
                   description={document.description}
                   file={files[document.key]}
                   disabled={pending}
+                  source={
+                    digilockerKeys.has(document.key) ? "digilocker" : undefined
+                  }
                   onSelect={(file) => selectFile(document.key, file)}
                   onClear={() => clearFile(document.key)}
                 />
@@ -355,6 +424,13 @@ export default function KycVerifyPage() {
           </Link>
         </p>
       </main>
+
+      {digilockerOpen ? (
+        <DigilockerModal
+          onClose={() => setDigilockerOpen(false)}
+          onComplete={handleDigilockerComplete}
+        />
+      ) : null}
     </div>
   );
 }

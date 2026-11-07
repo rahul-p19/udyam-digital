@@ -63,7 +63,7 @@ export const env = {
   port: readNumber("PORT", 8080),
   databaseUrl: readString(
     "DATABASE_URL",
-    "postgres://postgres:postgres@localhost:5433/udyam_digital",
+    "postgres://postgres:postgres@localhost:5432/udyam_digital",
   ),
   corsOrigins: readString("CORS_ORIGIN", "http://localhost:3000")
     .split(",")
