@@ -77,6 +77,19 @@ const FIELD_LABELS: Record<string, string> = {
   monthlyBudget: "approximate monthly budget in INR",
 };
 
+const LANGUAGE_INSTRUCTION: Record<string, string> = {
+  Hindi: "हिंदी में जवाब दें (Respond in Hindi). Use Devanagari script.",
+  Hinglish: "Respond in Hinglish — a natural mix of Hindi and English commonly used by Indian business owners.",
+  Tamil: "Respond in Tamil script.",
+  Telugu: "Respond in Telugu script.",
+  Kannada: "Respond in Kannada script.",
+  Bengali: "Respond in Bengali script.",
+  Marathi: "Respond in Marathi (Devanagari script).",
+  Gujarati: "Respond in Gujarati script.",
+  Punjabi: "Respond in Punjabi (Gurmukhi script).",
+  Malayalam: "Respond in Malayalam script.",
+};
+
 function buildResponseSystemInstruction(
   profile: BusinessProfile,
   missingFieldsList: string[],
@@ -88,6 +101,11 @@ function buildResponseSystemInstruction(
   const completionInstruction = profileComplete
     ? "The business profile is now complete. Write a warm 2-sentence summary of their profile and tell them you are ready to show product recommendations."
     : `The next missing fields in order are: ${nextFieldsText}. Ask about the FIRST one only.`;
+
+  const language = profile.preferredLanguage ?? "English";
+  const languageRule = LANGUAGE_INSTRUCTION[language]
+    ? `7. LANGUAGE: ${LANGUAGE_INSTRUCTION[language]}`
+    : "7. Keep responses under 80 words. Use simple, warm English suitable for Indian business owners.";
 
   return `You are Udyam AI Advisor, a friendly and professional business connectivity consultant for Udyam Digital — an Airtel platform for Indian MSMEs.
 
@@ -103,7 +121,7 @@ RULES:
 4. When asking about "requirements" (services needed), always list the available services so the user can choose. Example: "We offer: business broadband, SIM cards, WhatsApp/SMS, cloud email, cloud storage, cybersecurity, CCTV, POS, dedicated bandwidth, and IoT. Which of these would help your business?"
 5. If the user asks something unrelated, acknowledge briefly and redirect back: "I will keep that in mind. For now, let me make sure I have all your business details."
 6. If an answer is ambiguous, ask a brief clarification instead of assuming.
-7. Keep responses under 80 words. Use simple, warm English suitable for Indian business owners.
+${languageRule}
 8. Never invent or assume any facts about the user's business.
 9. Do not ask multiple questions at once.
 

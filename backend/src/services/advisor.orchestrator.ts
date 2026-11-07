@@ -175,7 +175,7 @@ export async function startAdvisorSession(
   const message: AdvisorMessage = {
     role: "assistant",
     content:
-      "Hello! I'm your Udyam AI Advisor. I'll help you find the right digital services for your business.\n\nTo begin, what type of business do you operate?",
+      "Hello! I'm your Udyam AI Advisor. I'll help you find the right digital services for your business.\n\nआप हिंदी में भी बात कर सकते हैं। (You can also reply in Hindi or your regional language.)\n\nTo begin, what type of business do you operate?",
     createdAt: new Date().toISOString(),
   };
   session.messages.push(message);
