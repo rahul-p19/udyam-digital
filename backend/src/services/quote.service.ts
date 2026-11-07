@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { query } from "../db/pool.js";
 import { getProducts } from "./catalogue.service.js";
+import { ApiError } from "../utils/ApiError.js";
 
 export interface QuoteProduct {
   productId: string;
@@ -73,6 +74,24 @@ export async function createQuote(
     }));
 
   if (products.length === 0) return null;
+
+  // Dependency check: each selected product's requiredProducts must have ≥1 in the bundle
+  const selectedSet = new Set(products.map((p) => p.productId));
+  for (const id of selectedProductIds) {
+    const full = allProducts.find((p) => p.productId === id);
+    if (full && full.requiredProducts.length > 0) {
+      const satisfied = full.requiredProducts.some((dep) => selectedSet.has(dep));
+      if (!satisfied) {
+        const depNames = full.requiredProducts
+          .map((dep) => allProducts.find((p) => p.productId === dep)?.name ?? dep)
+          .join(" or ");
+        throw new ApiError(
+          422,
+          `${full.name} requires at least one of: ${depNames}. Please add a compatible broadband product to your bundle.`,
+        );
+      }
+    }
+  }
 
   const totalMonthlyMin = products.reduce((s, p) => s + p.monthlyPriceMin, 0);
   const totalMonthlyMax = products.reduce((s, p) => s + p.monthlyPriceMax, 0);

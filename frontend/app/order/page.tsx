@@ -1,9 +1,11 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { quoteApi, type Order } from "../../lib/api";
+
+const POLL_INTERVAL_MS = 30_000;
 
 const STATUS_STEPS = [
   { key: "submitted", label: "Order placed" },
@@ -55,13 +57,34 @@ function OrderContent() {
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (!orderId) { setLoading(false); return; }
-    quoteApi.getOrder(orderId)
-      .then(setOrder)
-      .catch((err: Error) => setError(err.message || "Order not found."))
-      .finally(() => setLoading(false));
+    let cancelled = false;
+
+    async function fetchOrder() {
+      try {
+        const data = await quoteApi.getOrder(orderId!);
+        if (cancelled) return;
+        setOrder(data);
+        setLoading(false);
+        const terminal = data.status === "activated" || data.status === "cancelled";
+        if (!terminal) {
+          timerRef.current = setTimeout(fetchOrder, POLL_INTERVAL_MS);
+        }
+      } catch (err) {
+        if (cancelled) return;
+        setError(err instanceof Error ? err.message : "Order not found.");
+        setLoading(false);
+      }
+    }
+
+    fetchOrder();
+    return () => {
+      cancelled = true;
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
   }, [orderId]);
 
   if (!orderId) return <main className="min-h-screen p-8"><p>Missing order ID.</p></main>;
@@ -96,7 +119,15 @@ function OrderContent() {
         {/* Status tracker */}
         {!isCancelled && (
           <section className="space-y-4">
-            <h2 className="font-semibold">Order status</h2>
+            <div className="flex items-center gap-2">
+              <h2 className="font-semibold">Order status</h2>
+              {order.status !== "activated" && (
+                <span className="flex items-center gap-1 text-xs text-gray-400">
+                  <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-green-500" />
+                  Live
+                </span>
+              )}
+            </div>
             <StatusTracker status={order.status as StatusKey} />
             {order.estimatedActivationDate && (
               <p className="text-sm text-gray-500">

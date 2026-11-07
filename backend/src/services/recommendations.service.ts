@@ -166,7 +166,7 @@ export function computeRecommendations(
       if (!p.eligibleCityTiers.includes(cityTier) && !p.eligibleCityTiers.includes(2)) return false;
       if (p.minEmployees > employees) return false;
       if (p.minSites > sites) return false;
-      if (p.requiresGSTIN && !hasGSTIN) return false;
+      // requiresGSTIN products are included but marked — frontend disables selection when not KYC verified
       return true;
     })
     .map((product) => {

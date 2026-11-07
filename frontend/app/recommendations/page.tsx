@@ -2,44 +2,59 @@
 
 import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { recommendationsApi, quoteApi, type ScoredProduct } from "../../lib/api";
+import { authApi, recommendationsApi, quoteApi, type AuthUser, type ScoredProduct } from "../../lib/api";
 
 function ProductCard({
   product,
   rank,
   selected,
+  locked,
+  missingDep,
   onToggle,
 }: {
   product: ScoredProduct;
   rank?: number;
   selected: boolean;
+  locked?: boolean;
+  missingDep?: string;
   onToggle: (id: string) => void;
 }) {
   const isTop = rank !== undefined && rank < 3;
   return (
     <article
-      className={`rounded-2xl border p-5 space-y-4 flex flex-col cursor-pointer transition-all ${
-        selected ? "border-black ring-1 ring-black" : "opacity-70 hover:opacity-100"
+      className={`rounded-2xl border p-5 space-y-4 flex flex-col transition-all ${
+        locked
+          ? "opacity-50 cursor-not-allowed"
+          : selected
+            ? "border-black ring-1 ring-black cursor-pointer"
+            : "opacity-70 hover:opacity-100 cursor-pointer"
       }`}
-      onClick={() => onToggle(product.productId)}
+      onClick={() => !locked && onToggle(product.productId)}
     >
       <div className="space-y-1 flex-1">
         <div className="flex items-center justify-between gap-2">
           <p className="text-xs text-gray-500">{product.category}</p>
           <div className="flex items-center gap-2 shrink-0">
-            {isTop && <span className="text-xs font-medium">⭐ Top pick</span>}
+            {isTop && !locked && <span className="text-xs font-medium">⭐ Top pick</span>}
             {product.requiresGSTIN && (
-              <span className="text-xs font-medium border border-amber-500 text-amber-600 px-1.5 py-0.5 rounded">
-                KYC required
+              <span className={`text-xs font-medium border px-1.5 py-0.5 rounded ${locked ? "border-gray-400 text-gray-400" : "border-amber-500 text-amber-600"}`}>
+                {locked ? "🔒 KYC required" : "KYC required"}
               </span>
             )}
-            <input
-              type="checkbox"
-              checked={selected}
-              onChange={() => onToggle(product.productId)}
-              onClick={(e) => e.stopPropagation()}
-              className="w-4 h-4 cursor-pointer"
-            />
+            {missingDep && (
+              <span className="text-xs font-medium border border-orange-400 text-orange-600 px-1.5 py-0.5 rounded">
+                Needs broadband
+              </span>
+            )}
+            {!locked && (
+              <input
+                type="checkbox"
+                checked={selected}
+                onChange={() => onToggle(product.productId)}
+                onClick={(e) => e.stopPropagation()}
+                className="w-4 h-4 cursor-pointer"
+              />
+            )}
           </div>
         </div>
         <h3 className="font-semibold leading-snug">{product.name}</h3>
@@ -127,22 +142,31 @@ function RecommendationsContent() {
   const [quoteLoading, setQuoteLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<AuthUser | null>(null);
 
   useEffect(() => {
     if (!sessionId) { setLoading(false); return; }
-    recommendationsApi
-      .get(sessionId)
-      .then((data) => {
+    Promise.all([
+      recommendationsApi.get(sessionId),
+      authApi.me().then(({ user: u }) => u).catch(() => null),
+    ])
+      .then(([data, u]) => {
+        setUser(u);
         setRecommendations(data.recommendations);
         setExplanation(data.explanation);
-        // Pre-select top 3
-        setSelectedIds(new Set(data.recommendations.slice(0, 3).map((p) => p.productId)));
+        // Pre-select top 3 that user can actually select (skip GSTIN-locked ones)
+        const selectable = data.recommendations.filter(
+          (p) => !p.requiresGSTIN || u?.kycVerified,
+        );
+        setSelectedIds(new Set(selectable.slice(0, 3).map((p) => p.productId)));
       })
       .catch((err: Error) => setError(err.message || "Unable to load recommendations."))
       .finally(() => setLoading(false));
   }, [sessionId]);
 
   function toggleProduct(id: string) {
+    const product = recommendations.find((p) => p.productId === id);
+    if (product?.requiresGSTIN && !user?.kycVerified) return;
     setSelectedIds((prev) => {
       const next = new Set(prev);
       next.has(id) ? next.delete(id) : next.add(id);
@@ -152,6 +176,22 @@ function RecommendationsContent() {
 
   async function handleGetQuote() {
     if (!sessionId || selectedIds.size === 0) return;
+
+    // Client-side dependency check before API call
+    for (const id of selectedIds) {
+      const product = recommendations.find((p) => p.productId === id);
+      if (product && product.requiredProducts.length > 0) {
+        const satisfied = product.requiredProducts.some((dep) => selectedIds.has(dep));
+        if (!satisfied) {
+          const depNames = product.requiredProducts
+            .map((dep) => recommendations.find((p) => p.productId === dep)?.name ?? dep)
+            .join(" or ");
+          setError(`${product.name} requires ${depNames} in the same bundle. Please add a compatible broadband product.`);
+          return;
+        }
+      }
+    }
+
     setQuoteLoading(true);
     try {
       const quote = await quoteApi.create(sessionId, [...selectedIds]);
@@ -198,18 +238,31 @@ function RecommendationsContent() {
 
           <BundleSummary products={selected.length > 0 ? selected : topRated} />
 
+          {recommendations.some((p) => p.requiresGSTIN && !user?.kycVerified) && (
+            <div className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+              🔒 Some products require business KYC verification. <a href="/kyc/consent" className="font-medium underline underline-offset-4 hover:text-amber-900">Complete KYC</a> to unlock them.
+            </div>
+          )}
+
           <section className="space-y-4">
             <h2 className="font-semibold text-lg">⭐ Top picks for you</h2>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {topRated.map((product, i) => (
-                <ProductCard
-                  key={product.productId}
-                  product={product}
-                  rank={i}
-                  selected={selectedIds.has(product.productId)}
-                  onToggle={toggleProduct}
-                />
-              ))}
+              {topRated.map((product, i) => {
+                const depMissing = product.requiredProducts.length > 0 && selectedIds.has(product.productId)
+                  ? !product.requiredProducts.some((dep) => selectedIds.has(dep))
+                  : false;
+                return (
+                  <ProductCard
+                    key={product.productId}
+                    product={product}
+                    rank={i}
+                    selected={selectedIds.has(product.productId)}
+                    locked={product.requiresGSTIN && !user?.kycVerified}
+                    missingDep={depMissing ? product.requiredProducts[0] : undefined}
+                    onToggle={toggleProduct}
+                  />
+                );
+              })}
             </div>
           </section>
 
@@ -217,14 +270,21 @@ function RecommendationsContent() {
             <section className="space-y-4">
               <h2 className="font-semibold text-lg">More options</h2>
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {rest.map((product) => (
-                  <ProductCard
-                    key={product.productId}
-                    product={product}
-                    selected={selectedIds.has(product.productId)}
-                    onToggle={toggleProduct}
-                  />
-                ))}
+                {rest.map((product) => {
+                  const depMissing = product.requiredProducts.length > 0 && selectedIds.has(product.productId)
+                    ? !product.requiredProducts.some((dep) => selectedIds.has(dep))
+                    : false;
+                  return (
+                    <ProductCard
+                      key={product.productId}
+                      product={product}
+                      selected={selectedIds.has(product.productId)}
+                      locked={product.requiresGSTIN && !user?.kycVerified}
+                      missingDep={depMissing ? product.requiredProducts[0] : undefined}
+                      onToggle={toggleProduct}
+                    />
+                  );
+                })}
               </div>
             </section>
           )}
