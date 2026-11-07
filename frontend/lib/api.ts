@@ -356,6 +356,9 @@ export const quoteApi = {
   getOrder(orderId: string) {
     return request<Order>(`/api/quote/order/${encodeURIComponent(orderId)}`);
   },
+  listOrders() {
+    return requestWithRefresh<{ orders: Order[] }>("/api/quote/orders");
+  },
 };
 
 export const recommendationsApi = {

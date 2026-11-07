@@ -25,34 +25,7 @@ type StoredOrder = {
   submitted_at: string;
 };
 
-function activationDate(maxInstallDays: number): string {
-  const d = new Date();
-  d.setDate(d.getDate() + maxInstallDays + 2); // +2 buffer days
-  return d.toISOString().slice(0, 10);
-}
-
-export async function createOrder(
-  quoteId: string,
-  contactName: string,
-  contactPhone: string,
-): Promise<Order | null> {
-  const quote = await getQuote(quoteId);
-  if (!quote || quote.status === "expired") return null;
-
-  const maxDays = Math.max(...quote.products.map((p) => p.typicalInstallDays), 5);
-  const estDate = activationDate(maxDays);
-
-  // Mark quote as confirmed
-  await query("UPDATE quotes SET status = 'confirmed', updated_at = now() WHERE id = $1", [quoteId]);
-
-  const result = await query<StoredOrder>(
-    `INSERT INTO orders (id, quote_id, session_id, contact_name, contact_phone, estimated_activation_date)
-     VALUES ($1, $2, $3, $4, $5, $6)
-     RETURNING id, quote_id, session_id, contact_name, contact_phone, status, estimated_activation_date, submitted_at`,
-    [randomUUID(), quoteId, quote.sessionId, contactName.trim(), contactPhone.trim(), estDate],
-  );
-
-  const row = result.rows[0];
+function rowToOrder(row: StoredOrder, quote: Quote): Order {
   return {
     orderId: row.id,
     quoteId: row.quote_id,
@@ -64,6 +37,45 @@ export async function createOrder(
     submittedAt: row.submitted_at,
     quote,
   };
+}
+
+function activationDate(maxInstallDays: number): string {
+  const d = new Date();
+  d.setDate(d.getDate() + maxInstallDays + 2); // +2 buffer days
+  return d.toISOString().slice(0, 10);
+}
+
+export async function createOrder(
+  quoteId: string,
+  contactName: string,
+  contactPhone: string,
+  userId: string | null = null,
+): Promise<Order | null> {
+  const quote = await getQuote(quoteId);
+  if (!quote || quote.status === "expired") return null;
+
+  const maxDays = Math.max(...quote.products.map((p) => p.typicalInstallDays), 5);
+  const estDate = activationDate(maxDays);
+
+  // Mark quote as confirmed
+  await query("UPDATE quotes SET status = 'confirmed', updated_at = now() WHERE id = $1", [quoteId]);
+
+  const result = await query<StoredOrder>(
+    `INSERT INTO orders (id, quote_id, session_id, user_id, contact_name, contact_phone, estimated_activation_date)
+     VALUES ($1, $2, $3, $4, $5, $6, $7)
+     RETURNING id, quote_id, session_id, contact_name, contact_phone, status, estimated_activation_date, submitted_at`,
+    [
+      randomUUID(),
+      quoteId,
+      quote.sessionId,
+      userId,
+      contactName.trim(),
+      contactPhone.trim(),
+      estDate,
+    ],
+  );
+
+  return rowToOrder(result.rows[0], quote);
 }
 
 export async function getOrder(orderId: string): Promise<Order | null> {
@@ -76,15 +88,22 @@ export async function getOrder(orderId: string): Promise<Order | null> {
   const row = result.rows[0];
   const quote = await getQuote(row.quote_id);
   if (!quote) return null;
-  return {
-    orderId: row.id,
-    quoteId: row.quote_id,
-    sessionId: row.session_id,
-    contactName: row.contact_name,
-    contactPhone: row.contact_phone,
-    status: row.status,
-    estimatedActivationDate: row.estimated_activation_date,
-    submittedAt: row.submitted_at,
-    quote,
-  };
+  return rowToOrder(row, quote);
+}
+
+export async function getOrdersByUser(userId: string): Promise<Order[]> {
+  const result = await query<StoredOrder>(
+    `SELECT id, quote_id, session_id, contact_name, contact_phone, status, estimated_activation_date, submitted_at
+     FROM orders WHERE user_id = $1 ORDER BY submitted_at DESC`,
+    [userId],
+  );
+
+  const orders = await Promise.all(
+    result.rows.map(async (row) => {
+      const quote = await getQuote(row.quote_id);
+      return quote ? rowToOrder(row, quote) : null;
+    }),
+  );
+
+  return orders.filter((order): order is Order => order !== null);
 }
