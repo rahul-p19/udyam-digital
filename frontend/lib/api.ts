@@ -371,3 +371,60 @@ export const recommendationsApi = {
     }>(`/api/advisor/recommendations/${encodeURIComponent(sessionId)}`);
   },
 };
+
+export interface AdminLead {
+  sessionId: string;
+  businessType: string | null;
+  employeeCount: number | null;
+  locationCount: number | null;
+  requirements: string[];
+  preferredLanguage: string;
+  profileComplete: boolean;
+  messageCount: number;
+  createdAt: string;
+  updatedAt: string;
+  hasOrder: boolean;
+  dropStage: "advisor" | "quote_or_checkout" | "ordered";
+}
+
+export interface AdminKycCase {
+  id: string;
+  userId: string;
+  userEmail: string;
+  userName: string | null;
+  status: "manual_review" | "verified" | "rejected";
+  checks: Array<{ key: string; label: string; passed: boolean; detail: string | null }>;
+  extracted: {
+    gst: { gstin: string | null; legalName: string | null; tradeName: string | null; address: string | null; status: string | null };
+    udyam: { udyamNumber: string | null; enterpriseName: string | null; enterpriseType: string | null; state: string | null; city: string | null };
+    signatory: { idType: string | null; idMasked: string | null; name: string | null };
+    addressProof: { name: string | null; address: string | null };
+  };
+  createdAt: string;
+  failedChecks?: number;
+}
+
+function adminRequest<T>(path: string, adminKey: string, options: RequestOptions = {}): Promise<T> {
+  return request<T>(path, {
+    ...options,
+    headers: { "x-admin-key": adminKey, ...(options.headers ?? {}) },
+  });
+}
+
+export const adminApi = {
+  listLeads(adminKey: string) {
+    return adminRequest<{ leads: AdminLead[] }>("/api/admin/leads", adminKey);
+  },
+  listKycQueue(adminKey: string) {
+    return adminRequest<{ queue: AdminKycCase[] }>("/api/admin/kyc/queue", adminKey);
+  },
+  getKycCase(adminKey: string, verificationId: string) {
+    return adminRequest<AdminKycCase>(`/api/admin/kyc/${encodeURIComponent(verificationId)}`, adminKey);
+  },
+  approveKyc(adminKey: string, verificationId: string) {
+    return adminRequest<{ id: string; status: string }>(`/api/admin/kyc/${encodeURIComponent(verificationId)}/approve`, adminKey, { method: "POST" });
+  },
+  rejectKyc(adminKey: string, verificationId: string) {
+    return adminRequest<{ id: string; status: string }>(`/api/admin/kyc/${encodeURIComponent(verificationId)}/reject`, adminKey, { method: "POST" });
+  },
+};
