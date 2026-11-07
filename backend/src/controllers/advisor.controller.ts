@@ -3,6 +3,7 @@ import { ApiError } from "../utils/ApiError.js";
 import {
   createAdvisorSession,
   getAdvisorSession,
+  saveAdvisorSession,
 } from "../services/advisor.service.js";
 import {
   processAdvisorMessage,
@@ -80,4 +81,32 @@ export async function chat(req: Request, res: Response): Promise<void> {
       ? "generate_recommendations"
       : "ask_question",
   });
+}
+
+const LANGUAGE_GREETINGS: Record<string, string> = {
+  Hindi: "नमस्ते! मैं अब हिंदी में आपकी मदद करूंगा। आपका व्यवसाय किस प्रकार का है?",
+  Hinglish: "Hey! Ab main Hinglish mein baat karunga. Aapka business kya hai?",
+  Tamil: "வணக்கம்! இனி தமிழில் பேசுவோம். உங்கள் வணிகம் என்ன வகையானது?",
+  Telugu: "నమస్కారం! ఇప్పుడు తెలుగులో మాట్లాడతాను. మీ వ్యాపారం ఏ రకమైనది?",
+  Bengali: "নমস্কার! এখন বাংলায় কথা বলব। আপনার ব্যবসা কী ধরনের?",
+  Marathi: "नमस्कार! आता मराठीत बोलतो. तुमचा व्यवसाय कोणत्या प्रकारचा आहे?",
+  Gujarati: "નમસ્તે! હવે ગુજરાતીમાં વાત કરીશ. તમારો ધંધો કેવા પ્રકારનો છે?",
+};
+
+export async function setLanguage(req: Request, res: Response): Promise<void> {
+  const { sessionId } = req.params;
+  const language = typeof req.body?.language === "string" ? req.body.language.trim() : "";
+  if (!language) throw new ApiError(400, "language is required");
+
+  const session = await getAdvisorSession(sessionId);
+  if (!session) throw new ApiError(404, "Advisor session not found");
+
+  session.profile = { ...session.profile, preferredLanguage: language };
+  await saveAdvisorSession(session);
+
+  const greeting =
+    LANGUAGE_GREETINGS[language] ??
+    "Got it! I'll continue in English. What type of business do you operate?";
+
+  res.json({ assistantMessage: greeting });
 }

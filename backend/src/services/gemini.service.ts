@@ -201,6 +201,11 @@ export async function generateBundleExplanation(
     .map((p) => `${p.name} (₹${p.monthlyPrice.min.toLocaleString("en-IN")}–₹${p.monthlyPrice.max.toLocaleString("en-IN")}/mo)`)
     .join(", ");
 
+  const language = profile.preferredLanguage ?? "English";
+  const languageInstruction = LANGUAGE_INSTRUCTION[language]
+    ? `IMPORTANT: ${LANGUAGE_INSTRUCTION[language]}`
+    : "Write in simple, warm English.";
+
   const prompt = `You are Udyam AI Advisor for Accel Business. A small business owner just completed their needs assessment.
 
 Business: ${profile.businessType ?? "small business"}, ${profile.employeeCount ?? 1} employees, ${profile.locationCount ?? 1} location(s)
@@ -209,7 +214,8 @@ Budget: ${budgetText}
 Current connectivity: ${profile.currentInfrastructure.join(", ") || "none"}
 Top recommended products: ${productList}
 
-Write a 2-3 sentence explanation of why these products are the right fit for this specific business. Be warm, specific, and use plain language. Mention their business type. No bullet points or headers.`;
+Write a 2-3 sentence explanation of why these products are the right fit for this specific business. Be warm, specific, and use plain language. Mention their business type. No bullet points or headers.
+${languageInstruction}`;
 
   const response = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/${env.geminiModel}:generateContent?key=${encodeURIComponent(env.geminiApiKey)}`,

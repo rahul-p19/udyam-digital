@@ -123,6 +123,37 @@ export default function Page() {
     ? profileFields.filter((field) => isCollected(profile, field)).length
     : 0;
 
+  const userMessageCount = messages.filter((m) => m.role === "user").length;
+
+  const LANGUAGES = [
+    { label: "English", value: "English" },
+    { label: "हिंदी", value: "Hindi" },
+    { label: "Hinglish", value: "Hinglish" },
+    { label: "தமிழ்", value: "Tamil" },
+    { label: "తెలుగు", value: "Telugu" },
+    { label: "বাংলা", value: "Bengali" },
+    { label: "मराठी", value: "Marathi" },
+    { label: "ગુજરાતી", value: "Gujarati" },
+  ];
+
+  async function handleLanguagePick(language: string) {
+    if (!sessionId || loading) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await advisorApi.setLanguage(sessionId, language);
+      // Replace the opening message with the language-aware greeting
+      setMessages((current) => [
+        ...current.slice(0, 1),
+        { role: "assistant", content: response.assistantMessage, createdAt: new Date().toISOString() },
+      ]);
+    } catch (sendError) {
+      setError(sendError instanceof Error ? sendError.message : "Unable to set language.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
     <div className="flex h-screen flex-col bg-ground">
       <SiteHeader marker="Advisor / Session" />
@@ -257,6 +288,10 @@ export default function Page() {
                   >
                     Continue to product recommendations
                   </button>
+
+                  <p className="mt-4 border-l-2 border-ink/30 pl-3 text-metadata text-muted">
+                    Some products — such as dedicated bandwidth and leased lines — require a valid GSTIN and will only appear after you complete business KYC.
+                  </p>
                 </section>
               )}
               <div ref={chatEndRef} />
@@ -264,6 +299,24 @@ export default function Page() {
           </div>
 
           <footer className="border-t-2 border-ink px-gutter py-4">
+            {userMessageCount === 0 && !profile?.profileComplete && (
+              <div className="mx-auto mb-3 flex max-w-3xl items-center gap-2">
+                <span className="text-label font-strong uppercase text-muted">
+                  Language:
+                </span>
+                {LANGUAGES.map((lang) => (
+                  <button
+                    key={lang.label}
+                    type="button"
+                    disabled={loading}
+                    onClick={() => handleLanguagePick(lang.value)}
+                    className="border-2 border-ink/30 px-3 py-1 text-label font-strong text-ink hover:border-accent hover:text-accent disabled:opacity-40"
+                  >
+                    {lang.label}
+                  </button>
+                ))}
+              </div>
+            )}
             <form
               onSubmit={handleSubmit}
               className="mx-auto flex max-w-3xl items-end gap-2 border-2 border-ink p-2"

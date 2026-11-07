@@ -47,6 +47,7 @@ export interface ScoredProduct extends Product {
   minEmployees: number;
   minSites: number;
   requiresGSTIN: boolean;
+  requiredProducts: string[];
   targetSegments: string[];
 }
 
@@ -293,6 +294,13 @@ export const advisorApi = {
       }>;
       status: "in_progress" | "complete";
     }>(`/api/advisor/session/${encodeURIComponent(sessionId)}`);
+  },
+
+  setLanguage(sessionId: string, language: string) {
+    return request<{ assistantMessage: string }>(
+      `/api/advisor/session/${encodeURIComponent(sessionId)}/language`,
+      { method: "POST", body: { language } },
+    );
   },
 };
 
