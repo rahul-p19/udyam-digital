@@ -1,7 +1,7 @@
 import type { Request, Response } from "express";
 import { ApiError } from "../utils/ApiError.js";
 import { createQuote, getQuote } from "../services/quote.service.js";
-import { createOrder, getOrder } from "../services/order.service.js";
+import { createOrder, getOrder, getOrdersByUser } from "../services/order.service.js";
 
 export async function createQuoteHandler(req: Request, res: Response): Promise<void> {
   const sessionId =
@@ -42,10 +42,17 @@ export async function createOrderHandler(req: Request, res: Response): Promise<v
     throw new ApiError(400, "Invalid phone number");
   }
 
-  const order = await createOrder(quoteId, contactName, contactPhone);
+  const order = await createOrder(quoteId, contactName, contactPhone, req.user?.id ?? null);
   if (!order) throw new ApiError(404, "Quote not found or already expired");
 
   res.status(201).json(order);
+}
+
+export async function listOrdersHandler(req: Request, res: Response): Promise<void> {
+  if (!req.user) throw new ApiError(401, "Not authenticated");
+
+  const orders = await getOrdersByUser(req.user.id);
+  res.json({ orders });
 }
 
 export async function getOrderHandler(req: Request, res: Response): Promise<void> {

@@ -1,7 +1,6 @@
 "use client";
 
 import { FormEvent, useEffect, useRef, useState } from "react";
-import { SiteHeader } from "@/components/site-header";
 import { useRouter } from "next/navigation";
 import { advisorApi, type BusinessProfile } from "../../lib/api";
 
@@ -85,7 +84,7 @@ export default function Page() {
   }, []);
 
   useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ block: "end" });
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loading]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -223,6 +222,10 @@ export default function Page() {
                   {error}
                 </p>
               ) : null}
+          ))}
+
+          {loading && <p className="text-sm animate-pulse">Thinking...</p>}
+          {error && <p className="text-sm" role="alert">{error}</p>}
 
               {profile?.profileComplete && (
                 <section className="border-t-2 border-ink pt-6">
@@ -303,6 +306,54 @@ export default function Page() {
           </footer>
         </main>
       </div>
+          {profile?.profileComplete && (
+            <section className="border rounded-2xl p-5 space-y-3">
+              <h2 className="font-semibold">Your business profile</h2>
+              <dl className="grid gap-2 text-sm sm:grid-cols-2">
+                {profileSummary(profile).map(([label, value]) => (
+                  <div key={label}>
+                    <dt className="font-semibold">{label}</dt>
+                    <dd>{value || "Not specified"}</dd>
+                  </div>
+                ))}
+              </dl>
+              <button
+                type="button"
+                onClick={() =>
+                  router.push(`/recommendations?sessionId=${encodeURIComponent(sessionId ?? "")}`)
+                }
+                className="border rounded-lg px-4 py-2 text-sm"
+              >
+                Continue to product recommendations
+              </button>
+            </section>
+          )}
+          <div ref={chatEndRef} />
+        </div>
+      </main>
+
+      <footer className="border-t px-4 py-4">
+        <form onSubmit={handleSubmit} className="max-w-3xl mx-auto flex items-end gap-3 border rounded-2xl p-2">
+          <textarea
+            value={inputValue}
+            onChange={(event) => setInputValue(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" && !event.shiftKey) {
+                event.preventDefault();
+                event.currentTarget.form?.requestSubmit();
+              }
+            }}
+            placeholder="Tell me about your business..."
+            rows={1}
+            disabled={loading || profile?.profileComplete}
+            className="flex-1 resize-none outline-none border-none px-3 py-2 text-sm max-h-32"
+          />
+          <button type="submit" disabled={!inputValue.trim() || loading || !sessionId || profile?.profileComplete} className="w-10 h-10 rounded-xl border flex items-center justify-center disabled:opacity-30" aria-label="Send message">
+            ↑
+          </button>
+        </form>
+        <p className="text-center text-xs mt-3">Share one detail or several at a time. Your answers are saved for this session.</p>
+      </footer>
     </div>
   );
 }
