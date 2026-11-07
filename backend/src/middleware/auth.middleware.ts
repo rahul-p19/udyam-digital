@@ -21,3 +21,18 @@ export const requireAuth: RequestHandler = (req, _res, next) => {
     next(new ApiError(401, "Invalid or expired access token"));
   }
 };
+
+export const optionalAuth: RequestHandler = (req, _res, next) => {
+  const token = req.cookies?.[ACCESS_TOKEN_COOKIE] as string | undefined;
+
+  if (token) {
+    try {
+      const payload = verifyAccessToken(token);
+      req.user = { id: payload.sub, email: payload.email };
+    } catch {
+      // Anonymous requests are allowed; protected routes still require auth.
+    }
+  }
+
+  next();
+};
