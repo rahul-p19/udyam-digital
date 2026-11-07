@@ -42,7 +42,8 @@ export async function createOrderHandler(req: Request, res: Response): Promise<v
     throw new ApiError(400, "Invalid phone number");
   }
 
-  const order = await createOrder(quoteId, contactName, contactPhone, req.user?.id ?? null);
+  if (!req.user) throw new ApiError(401, "Not authenticated");
+  const order = await createOrder(quoteId, contactName, contactPhone, req.user.id);
   if (!order) throw new ApiError(404, "Quote not found or already expired");
 
   res.status(201).json(order);

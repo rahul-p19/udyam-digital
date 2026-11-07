@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { query } from "../db/pool.js";
 import { getQuote, type Quote } from "./quote.service.js";
+import { ApiError } from "../utils/ApiError.js";
 
 export interface Order {
   orderId: string;
@@ -49,8 +50,20 @@ export async function createOrder(
   quoteId: string,
   contactName: string,
   contactPhone: string,
-  userId: string | null = null,
+  userId: string,
 ): Promise<Order | null> {
+  const kycResult = await query<{ exists: boolean }>(
+    `SELECT EXISTS(
+       SELECT 1 FROM kyc_verifications
+       WHERE user_id = $1 AND status = 'verified'
+       LIMIT 1
+     ) AS exists`,
+    [userId],
+  );
+  if (!kycResult.rows[0]?.exists) {
+    throw new ApiError(403, "Business KYC verification is required before placing an order");
+  }
+
   const quote = await getQuote(quoteId);
   if (!quote || quote.status === "expired") return null;
 

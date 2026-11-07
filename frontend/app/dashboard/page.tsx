@@ -198,6 +198,51 @@ export default function DashboardPage() {
                 </button>
               </div>
 
+              <section className="mt-14" aria-labelledby="kyc-heading">
+                <div className="border-b-2 border-ink pb-4">
+                  <p className="text-label font-strong uppercase text-accent">
+                    02 / KYC
+                  </p>
+                  <h2
+                    id="kyc-heading"
+                    className="mt-2 text-3xl font-[750] leading-none tracking-tight text-ink"
+                  >
+                    Business verification
+                  </h2>
+                </div>
+
+                {user.kycVerified ? (
+                  <div className="mt-5 flex items-start gap-3 border-2 border-ink bg-ink p-5">
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center border-2 border-accent bg-accent text-label font-strong text-white">
+                      ✓
+                    </span>
+                    <div>
+                      <p className="text-metadata font-strong text-white">
+                        KYC verified
+                      </p>
+                      <p className="mt-1 text-metadata text-white/70">
+                        Your business documents have been verified. You can place orders.
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="mt-5 border-2 border-ink bg-surface p-5">
+                    <p className="text-metadata font-strong text-ink">
+                      KYC not completed
+                    </p>
+                    <p className="mt-1 max-w-md text-metadata text-muted">
+                      Verify your business documents to place orders. The process takes about 5 minutes.
+                    </p>
+                    <Link
+                      href="/kyc/consent"
+                      className="mt-4 inline-flex border-2 border-accent bg-accent px-5 py-3 text-label font-strong uppercase text-white hover:border-accent-hover hover:bg-accent-hover"
+                    >
+                      Start KYC verification →
+                    </Link>
+                  </div>
+                )}
+              </section>
+
               <section className="mt-14" aria-labelledby="my-orders-heading">
                 <div className="flex flex-wrap items-end justify-between gap-3 border-b-2 border-ink pb-4">
                   <div>

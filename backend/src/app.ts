@@ -11,6 +11,7 @@ import catalogueRouter from "./routes/catalogue.route.js";
 import advisorRouter from "./routes/advisor.route.js";
 import quoteRouter from "./routes/quote.route.js";
 import kycRouter from "./routes/kyc.route.js";
+import adminRouter from "./routes/admin.route.js";
 
 export const createApp = () => {
   const app = express();
@@ -29,6 +30,7 @@ export const createApp = () => {
   app.use("/api/advisor", advisorRouter);
   app.use("/api/quote", quoteRouter);
   app.use("/api/kyc", kycRouter);
+  app.use("/api/admin", adminRouter);
 
   app.use(notFoundHandler);
   app.use(errorHandler);

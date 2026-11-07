@@ -84,4 +84,5 @@ export const env = {
   geminiApiKey,
   geminiModel: readString("GEMINI_MODEL", "gemini-2.5-flash"),
   geminiTimeoutMs: readNumber("GEMINI_TIMEOUT_MS", 30000),
+  adminSecret: readString("ADMIN_SECRET", "dev-admin-secret"),
 };

@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useState, type FormEvent } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useState, type FormEvent } from "react";
 import { SiteHeader } from "@/components/site-header";
 import {
   ApiError,
@@ -99,7 +99,17 @@ const rights = [
 ];
 
 export default function KycConsentPage() {
+  return (
+    <Suspense>
+      <KycConsentContent />
+    </Suspense>
+  );
+}
+
+function KycConsentContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const returnTo = searchParams.get("returnTo");
   const [accepted, setAccepted] = useState(false);
   const [authorizedSignatory, setAuthorizedSignatory] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -126,7 +136,10 @@ export default function KycConsentPage() {
         accepted,
         authorizedSignatory,
       });
-      router.push("/kyc/verify");
+      const verifyUrl = returnTo
+        ? `/kyc/verify?returnTo=${encodeURIComponent(returnTo)}`
+        : "/kyc/verify";
+      router.push(verifyUrl);
       router.refresh();
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) {

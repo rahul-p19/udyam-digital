@@ -1,7 +1,18 @@
+"use client";
+
 import Link from "next/link";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { authApi } from "@/lib/api";
 import { SiteHeader } from "@/components/site-header";
 
 export default function Home() {
+  const router = useRouter();
+
+  useEffect(() => {
+    authApi.me().then(() => router.replace("/dashboard")).catch(() => {});
+  }, [router]);
+
   return (
     <main className="flex flex-1 flex-col">
       <SiteHeader marker="01 / Home" />

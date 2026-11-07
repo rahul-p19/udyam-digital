@@ -10,6 +10,7 @@ import {
   verifyRefreshToken,
   type TokenPair,
 } from "./token.service.js";
+import { query } from "../db/pool.js";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MIN_PASSWORD_LENGTH = 8;
@@ -156,6 +157,15 @@ export const authService = {
     if (!user) {
       throw new ApiError(404, "User not found");
     }
-    return userModel.toPublic(user);
+    const kycResult = await query<{ exists: boolean }>(
+      `SELECT EXISTS(
+         SELECT 1 FROM kyc_verifications
+         WHERE user_id = $1 AND status = 'verified'
+         LIMIT 1
+       ) AS exists`,
+      [userId],
+    );
+    const kycVerified = kycResult.rows[0]?.exists ?? false;
+    return userModel.toPublic(user, kycVerified);
   },
 };
