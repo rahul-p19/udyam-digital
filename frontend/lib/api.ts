@@ -5,6 +5,7 @@ export interface AuthUser {
   id: string;
   email: string;
   name: string | null;
+  kycVerified: boolean;
 }
 
 export interface BusinessProfile {

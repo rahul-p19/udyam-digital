@@ -1,8 +1,9 @@
 "use client";
 
+import Link from "next/link";
 import { FormEvent, Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { quoteApi, type Quote } from "../../lib/api";
+import { ApiError, authApi, quoteApi, type AuthUser, type Quote } from "../../lib/api";
 
 export default function CheckoutPage() {
   return (
@@ -18,6 +19,7 @@ function CheckoutContent() {
   const router = useRouter();
 
   const [quote, setQuote] = useState<Quote | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(null);
   const [contactName, setContactName] = useState("");
   const [contactPhone, setContactPhone] = useState("");
   const [loading, setLoading] = useState(true);
@@ -26,8 +28,11 @@ function CheckoutContent() {
 
   useEffect(() => {
     if (!quoteId) { setLoading(false); return; }
-    quoteApi.get(quoteId)
-      .then(setQuote)
+    Promise.all([
+      quoteApi.get(quoteId),
+      authApi.me().then(({ user: u }) => u).catch(() => null),
+    ])
+      .then(([q, u]) => { setQuote(q); setUser(u); })
       .catch((err: Error) => setError(err.message || "Quote not found."))
       .finally(() => setLoading(false));
   }, [quoteId]);
@@ -41,6 +46,14 @@ function CheckoutContent() {
       const order = await quoteApi.placeOrder(quote.quoteId, contactName, contactPhone);
       router.push(`/order?orderId=${encodeURIComponent(order.orderId)}`);
     } catch (err) {
+      if (err instanceof ApiError && err.status === 401) {
+        router.replace("/login");
+        return;
+      }
+      if (err instanceof ApiError && err.status === 403) {
+        router.push(`/kyc/consent?returnTo=${encodeURIComponent(`/checkout?quoteId=${quote.quoteId}`)}`);
+        return;
+      }
       setError(err instanceof Error ? err.message : "Failed to place order.");
       setSubmitting(false);
     }
@@ -141,6 +154,23 @@ function CheckoutContent() {
             </div>
           </section>
 
+          {user && !user.kycVerified && (
+            <div className="rounded-xl border border-amber-300 bg-amber-50 p-4 space-y-2">
+              <p className="text-sm font-medium text-amber-800">
+                KYC verification required
+              </p>
+              <p className="text-sm text-amber-700">
+                Complete your business KYC before placing an order. It takes about 5 minutes.
+              </p>
+              <Link
+                href={`/kyc/consent?returnTo=${encodeURIComponent(`/checkout?quoteId=${quoteId}`)}`}
+                className="inline-block text-sm font-medium text-amber-800 underline underline-offset-4 hover:text-amber-900"
+              >
+                Complete KYC now →
+              </Link>
+            </div>
+          )}
+
           {error && <p className="text-sm text-red-600" role="alert">{error}</p>}
 
           <div className="flex gap-3">
@@ -153,7 +183,7 @@ function CheckoutContent() {
             </button>
             <button
               type="submit"
-              disabled={submitting || !contactName.trim() || !contactPhone.trim()}
+              disabled={submitting || !contactName.trim() || !contactPhone.trim() || (user != null && !user.kycVerified)}
               className="flex-1 rounded-xl bg-black text-white py-3 text-sm font-medium disabled:opacity-40 hover:bg-gray-800 transition-colors"
             >
               {submitting ? "Placing order…" : "Place order →"}

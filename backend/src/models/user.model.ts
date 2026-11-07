@@ -14,6 +14,7 @@ export interface PublicUser {
   id: string;
   email: string;
   name: string | null;
+  kycVerified: boolean;
 }
 
 const USER_COLUMNS = "id, email, password_hash, name, created_at, updated_at";
@@ -49,11 +50,12 @@ export const userModel = {
     return result.rows[0];
   },
 
-  toPublic(user: User): PublicUser {
+  toPublic(user: User, kycVerified = false): PublicUser {
     return {
       id: user.id,
       email: user.email,
       name: user.name,
+      kycVerified,
     };
   },
 };

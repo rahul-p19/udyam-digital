@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useState, type FormEvent } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useState, type FormEvent } from "react";
 import { DigilockerModal } from "@/components/digilocker-modal";
 import { SiteHeader } from "@/components/site-header";
 import { ApiError, kycApi, type KycVerification } from "@/lib/api";
@@ -139,7 +139,17 @@ function FileUploadCard({
 }
 
 export default function KycVerifyPage() {
+  return (
+    <Suspense>
+      <KycVerifyContent />
+    </Suspense>
+  );
+}
+
+function KycVerifyContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const returnTo = searchParams.get("returnTo");
   const [files, setFiles] = useState<SelectedFiles>({});
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
@@ -279,10 +289,10 @@ export default function KycVerifyPage() {
             </p>
             <div className="mt-6 flex flex-col gap-3 sm:flex-row">
               <Link
-                href="/dashboard"
+                href={returnTo ?? "/dashboard"}
                 className="inline-flex items-center justify-center border-2 border-accent bg-accent px-5 py-3 text-label font-strong uppercase text-white hover:border-accent-hover hover:bg-accent-hover"
               >
-                Go to dashboard
+                {returnTo ? "Continue to checkout" : "Go to dashboard"}
               </Link>
               <Link
                 href="/kyc/consent"
