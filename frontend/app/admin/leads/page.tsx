@@ -4,6 +4,12 @@ import { useEffect, useState } from "react";
 import { adminApi, type AdminLead } from "@/lib/api";
 import { useAdminKey } from "../layout";
 
+const PROPENSITY_CLASSES: Record<"HIGH" | "MED" | "LOW", string> = {
+  HIGH: "border-accent text-accent",
+  MED: "border-ink text-ink",
+  LOW: "border-ink/30 text-muted",
+};
+
 const DROP_STAGE_LABELS: Record<AdminLead["dropStage"], string> = {
   advisor: "In advisor",
   quote_or_checkout: "Quote / checkout",
@@ -91,7 +97,7 @@ export default function AdminLeadsPage() {
           <table className="w-full text-sm">
             <thead className="border-b-2 border-ink bg-surface">
               <tr>
-                {["Session", "Business type", "Employees", "Locations", "Services", "Messages", "Drop stage", "Last active"].map((h) => (
+                {["Session", "Business type", "Employees", "Locations", "Services", "Messages", "Priority", "Drop stage", "Last active"].map((h) => (
                   <th key={h} className="px-4 py-3 text-left text-label font-strong uppercase text-muted whitespace-nowrap">
                     {h}
                   </th>
@@ -120,6 +126,18 @@ export default function AdminLeadsPage() {
                   </td>
                   <td className="px-4 py-3 text-metadata text-ink text-center">
                     {lead.messageCount}
+                  </td>
+                  <td className="px-4 py-3">
+                    {!lead.hasOrder ? (
+                      <span
+                        title={lead.propensitySignals?.join(" · ") ?? ""}
+                        className={`border px-1.5 py-0.5 text-[10px] font-strong uppercase tracking-wider whitespace-nowrap ${PROPENSITY_CLASSES[lead.propensityTier ?? "LOW"]}`}
+                      >
+                        {lead.propensityTier ?? "LOW"}
+                      </span>
+                    ) : (
+                      <span className="text-muted">—</span>
+                    )}
                   </td>
                   <td className="px-4 py-3">
                     <span className={`border px-1.5 py-0.5 text-[10px] font-strong uppercase tracking-wider whitespace-nowrap ${DROP_STAGE_CLASSES[lead.dropStage]}`}>

@@ -60,6 +60,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   }
 
   const navLinks = [
+    { href: "/admin", label: "Dashboard", exact: true },
     { href: "/admin/leads", label: "Dropped leads" },
     { href: "/admin/kyc", label: "KYC review queue" },
   ];
@@ -75,7 +76,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 key={link.href}
                 href={link.href}
                 className={`text-label font-strong uppercase ${
-                  pathname.startsWith(link.href) ? "text-ink" : "text-muted hover:text-ink"
+                  (link.exact ? pathname === link.href : pathname.startsWith(link.href))
+                    ? "text-ink"
+                    : "text-muted hover:text-ink"
                 }`}
               >
                 {link.label}
