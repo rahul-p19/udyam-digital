@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { query } from "../db/pool.js";
 import { getQuote, type Quote } from "./quote.service.js";
+import { sendOrderConfirmation } from "./whatsapp.service.js";
 import { ApiError } from "../utils/ApiError.js";
 
 export interface Order {
@@ -13,6 +14,12 @@ export interface Order {
   estimatedActivationDate: string | null;
   submittedAt: string;
   quote: Quote;
+  whatsapp: {
+    status: "pending" | "sent" | "skipped" | "failed";
+    messageId: string | null;
+    error: string | null;
+    sentAt: string | null;
+  };
 }
 
 type StoredOrder = {
@@ -24,7 +31,15 @@ type StoredOrder = {
   status: Order["status"];
   estimated_activation_date: string | null;
   submitted_at: string;
+  whatsapp_status: Order["whatsapp"]["status"];
+  whatsapp_message_id: string | null;
+  whatsapp_error: string | null;
+  whatsapp_sent_at: string | null;
 };
+
+const ORDER_COLUMNS = `id, quote_id, session_id, contact_name, contact_phone, status,
+  estimated_activation_date, submitted_at, whatsapp_status, whatsapp_message_id,
+  whatsapp_error, whatsapp_sent_at`;
 
 function rowToOrder(row: StoredOrder, quote: Quote): Order {
   return {
@@ -37,6 +52,12 @@ function rowToOrder(row: StoredOrder, quote: Quote): Order {
     estimatedActivationDate: row.estimated_activation_date,
     submittedAt: row.submitted_at,
     quote,
+    whatsapp: {
+      status: row.whatsapp_status,
+      messageId: row.whatsapp_message_id,
+      error: row.whatsapp_error,
+      sentAt: row.whatsapp_sent_at,
+    },
   };
 }
 
@@ -76,7 +97,7 @@ export async function createOrder(
   const result = await query<StoredOrder>(
     `INSERT INTO orders (id, quote_id, session_id, user_id, contact_name, contact_phone, estimated_activation_date)
      VALUES ($1, $2, $3, $4, $5, $6, $7)
-     RETURNING id, quote_id, session_id, contact_name, contact_phone, status, estimated_activation_date, submitted_at`,
+     RETURNING ${ORDER_COLUMNS}`,
     [
       randomUUID(),
       quoteId,
@@ -88,13 +109,43 @@ export async function createOrder(
     ],
   );
 
-  return rowToOrder(result.rows[0], quote);
+  const order = rowToOrder(result.rows[0], quote);
+
+  const notification = await sendOrderConfirmation({
+    orderId: order.orderId,
+    contactName: order.contactName,
+    contactPhone: order.contactPhone,
+    totalMonthlyMin: quote.totalMonthlyMin,
+    totalMonthlyMax: quote.totalMonthlyMax,
+    estimatedActivationDate: order.estimatedActivationDate,
+  });
+
+  const sentAt = notification.status === "sent" ? new Date().toISOString() : null;
+  try {
+    await query(
+      `UPDATE orders
+       SET whatsapp_status = $2, whatsapp_message_id = $3, whatsapp_error = $4,
+           whatsapp_sent_at = $5, updated_at = now()
+       WHERE id = $1`,
+      [order.orderId, notification.status, notification.messageId, notification.error, sentAt],
+    );
+  } catch (error) {
+    console.error("Failed to persist WhatsApp notification status", error);
+  }
+
+  order.whatsapp = {
+    status: notification.status,
+    messageId: notification.messageId,
+    error: notification.error,
+    sentAt,
+  };
+
+  return order;
 }
 
 export async function getOrder(orderId: string): Promise<Order | null> {
   const result = await query<StoredOrder>(
-    `SELECT id, quote_id, session_id, contact_name, contact_phone, status, estimated_activation_date, submitted_at
-     FROM orders WHERE id = $1`,
+    `SELECT ${ORDER_COLUMNS} FROM orders WHERE id = $1`,
     [orderId],
   );
   if (!result.rows[0]) return null;
@@ -106,8 +157,7 @@ export async function getOrder(orderId: string): Promise<Order | null> {
 
 export async function getOrdersByUser(userId: string): Promise<Order[]> {
   const result = await query<StoredOrder>(
-    `SELECT id, quote_id, session_id, contact_name, contact_phone, status, estimated_activation_date, submitted_at
-     FROM orders WHERE user_id = $1 ORDER BY submitted_at DESC`,
+    `SELECT ${ORDER_COLUMNS} FROM orders WHERE user_id = $1 ORDER BY submitted_at DESC`,
     [userId],
   );
 

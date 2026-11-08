@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { advisorApi, type BusinessProfile } from "../../lib/api";
 import { SiteHeader } from "@/components/site-header";
+import { getWhatsAppAdvisorUrl } from "@/lib/whatsapp";
 
 type Message = {
   role: "user" | "assistant";
@@ -57,6 +58,7 @@ export default function Page() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
+  const whatsappUrl = getWhatsAppAdvisorUrl();
 
   useEffect(() => {
     const savedSessionId = window.localStorage.getItem("udyam-advisor-session");
@@ -206,6 +208,17 @@ export default function Page() {
               {profile?.profileComplete ? "Complete" : "In progress"}
             </p>
           </div>
+
+          {whatsappUrl ? (
+            <a
+              href={whatsappUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="mt-6 block border-2 border-ink px-3 py-2 text-center text-label font-strong uppercase text-ink hover:bg-ink hover:text-white"
+            >
+              Chat on WhatsApp
+            </a>
+          ) : null}
 
           {process.env.NODE_ENV !== "production" && (
             <button

@@ -57,6 +57,18 @@ if (isProduction && (accessSecret === DEFAULT_ACCESS_SECRET || refreshSecret ===
 const cookieDomain = process.env.COOKIE_DOMAIN?.trim();
 const geminiApiKey = process.env.GEMINI_API_KEY?.trim() || undefined;
 
+const twilioAccountSid = process.env.TWILIO_ACCOUNT_SID?.trim() || undefined;
+const twilioAuthToken = process.env.TWILIO_AUTH_TOKEN?.trim() || undefined;
+const twilioWhatsAppFrom = process.env.TWILIO_WHATSAPP_FROM?.trim() || undefined;
+const twilioMessagingServiceSid =
+  process.env.TWILIO_MESSAGING_SERVICE_SID?.trim() || undefined;
+
+const readWhatsAppMessageType = (): "template" | "text" => {
+  const value = readString("WHATSAPP_MESSAGE_TYPE", "text").toLowerCase();
+  if (value === "template" || value === "text") return value;
+  throw new Error("Environment variable WHATSAPP_MESSAGE_TYPE must be either template or text");
+};
+
 export const env = {
   nodeEnv,
   isProduction,
@@ -85,4 +97,24 @@ export const env = {
   geminiModel: readString("GEMINI_MODEL", "gemini-2.5-flash"),
   geminiTimeoutMs: readNumber("GEMINI_TIMEOUT_MS", 30000),
   adminSecret: readString("ADMIN_SECRET", "dev-admin-secret"),
+  whatsapp: {
+    enabled: readBoolean(
+      "WHATSAPP_ENABLED",
+      Boolean(
+        twilioAccountSid &&
+          twilioAuthToken &&
+          (twilioWhatsAppFrom || twilioMessagingServiceSid),
+      ),
+    ),
+    accountSid: twilioAccountSid,
+    authToken: twilioAuthToken,
+    from: twilioWhatsAppFrom,
+    messagingServiceSid: twilioMessagingServiceSid,
+    contentSid: process.env.TWILIO_CONTENT_SID?.trim() || undefined,
+    apiBaseUrl: readString("TWILIO_API_BASE_URL", "https://api.twilio.com"),
+    webhookUrl: process.env.TWILIO_WEBHOOK_URL?.trim() || undefined,
+    messageType: readWhatsAppMessageType(),
+    defaultCountryCode: readString("WHATSAPP_DEFAULT_COUNTRY_CODE", "91"),
+    timeoutMs: readNumber("TWILIO_TIMEOUT_MS", 10000),
+  },
 };

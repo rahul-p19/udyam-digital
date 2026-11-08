@@ -4,6 +4,7 @@ import { Suspense, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { quoteApi, type Order } from "../../lib/api";
+import { getWhatsAppAdvisorUrl } from "@/lib/whatsapp";
 
 const POLL_INTERVAL_MS = 30_000;
 
@@ -92,6 +93,9 @@ function OrderContent() {
   if (!order) return <main className="min-h-screen p-8"><p role="alert">{error ?? "Order not found."}</p></main>;
 
   const isCancelled = order.status === "cancelled";
+  const whatsappUrl = getWhatsAppAdvisorUrl(
+    `Hi, I'd like to chat with the Udyam AI Advisor about order ${order.orderId.toUpperCase().slice(0, 8)}.`,
+  );
 
   return (
     <main className="min-h-screen px-4 py-10">
@@ -114,6 +118,12 @@ function OrderContent() {
           <p className="text-xs text-gray-500">Order reference</p>
           <p className="font-mono text-sm font-semibold">{order.orderId.toUpperCase().slice(0, 8)}</p>
           <p className="text-xs text-gray-400">Placed on {new Date(order.submittedAt).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}</p>
+          {order.whatsapp?.status === "sent" && (
+            <p className="text-xs text-green-700">Confirmation sent to your WhatsApp</p>
+          )}
+          {order.whatsapp?.status === "failed" && (
+            <p className="text-xs text-amber-700">WhatsApp confirmation could not be sent</p>
+          )}
         </section>
 
         {/* Status tracker */}
@@ -173,6 +183,16 @@ function OrderContent() {
           >
             Back to advisor
           </Link>
+          {whatsappUrl ? (
+            <a
+              href={whatsappUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="flex-1 rounded-xl bg-black py-3 text-sm font-medium text-center text-white hover:bg-gray-800"
+            >
+              Chat on WhatsApp
+            </a>
+          ) : null}
         </div>
 
       </div>

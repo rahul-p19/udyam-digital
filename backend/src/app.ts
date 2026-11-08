@@ -12,6 +12,7 @@ import advisorRouter from "./routes/advisor.route.js";
 import quoteRouter from "./routes/quote.route.js";
 import kycRouter from "./routes/kyc.route.js";
 import adminRouter from "./routes/admin.route.js";
+import whatsappRouter from "./routes/whatsapp.route.js";
 
 export const createApp = () => {
   const app = express();
@@ -19,6 +20,7 @@ export const createApp = () => {
   app.disable("x-powered-by");
   app.use(cors({ origin: env.corsOrigins, credentials: true }));
   app.use(express.json({ limit: "100kb" }));
+  app.use(express.urlencoded({ extended: false, limit: "100kb" }));
   app.use(cookieParser());
 
   app.get("/health", (_req, res) => {
@@ -31,6 +33,7 @@ export const createApp = () => {
   app.use("/api/quote", quoteRouter);
   app.use("/api/kyc", kycRouter);
   app.use("/api/admin", adminRouter);
+  app.use("/api/whatsapp", whatsappRouter);
 
   app.use(notFoundHandler);
   app.use(errorHandler);

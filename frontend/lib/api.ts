@@ -344,6 +344,12 @@ export interface Order {
   estimatedActivationDate: string | null;
   submittedAt: string;
   quote: Quote;
+  whatsapp: {
+    status: "pending" | "sent" | "skipped" | "failed";
+    messageId: string | null;
+    error: string | null;
+    sentAt: string | null;
+  };
 }
 
 export const quoteApi = {
