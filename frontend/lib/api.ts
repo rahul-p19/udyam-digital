@@ -393,6 +393,36 @@ export interface AdminLead {
   updatedAt: string;
   hasOrder: boolean;
   dropStage: "advisor" | "quote_or_checkout" | "ordered";
+  propensityScore: number;
+  propensityTier: "HIGH" | "MED" | "LOW";
+  propensitySignals: string[];
+}
+
+export interface FunnelStage {
+  label: string;
+  count: number;
+  pct: number | null;
+}
+
+export interface FunnelAnalytics {
+  live: {
+    totalSessions: number;
+    profileComplete: number;
+    totalQuotes: number;
+    totalOrders: number;
+    droppedInAdvisor: number;
+    droppedAtCheckout: number;
+  };
+  propensityBreakdown: Array<{ tier: string; count: number }>;
+  historical: {
+    stages: FunnelStage[];
+    dropReasons: Array<{ reason: string; count: number }>;
+    segmentBreakdown: Array<{ segment: string; total: number; activated: number; activationRate: number }>;
+    avgDaysToActivation: number;
+    avgAcquisitionCost: number;
+    gstinActivationRate: number;
+    noGstinActivationRate: number;
+  };
 }
 
 export interface AdminKycCase {
@@ -420,6 +450,9 @@ function adminRequest<T>(path: string, adminKey: string, options: RequestOptions
 }
 
 export const adminApi = {
+  getFunnelAnalytics(adminKey: string) {
+    return adminRequest<FunnelAnalytics>("/api/admin/analytics", adminKey);
+  },
   listLeads(adminKey: string) {
     return adminRequest<{ leads: AdminLead[] }>("/api/admin/leads", adminKey);
   },

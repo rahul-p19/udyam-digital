@@ -14,6 +14,7 @@ adminRouter.use((req: Request, _res: Response, next: NextFunction) => {
   next();
 });
 
+adminRouter.get("/analytics", adminController.getFunnelAnalytics);
 adminRouter.get("/leads", adminController.listLeads);
 adminRouter.get("/kyc/queue", adminController.listKycQueue);
 adminRouter.get("/kyc/:verificationId", adminController.getKycCase);
